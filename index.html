@@ -960,12 +960,12 @@ const EVENT_COLORS = {
 const deptCategoryDatasets = TYPES.map(t=>({
   label: t,
   data: vd.map(d=>data.evByDeptType?.[d]?.[t]||0),
-  backgroundColor: EVENT_COLORS[t] + '55',
+ backgroundColor: EVENT_COLORS[t],
   borderColor: EVENT_COLORS[t],
   borderWidth: 1,
   borderRadius: 4,
-  barPercentage: 0.7,
-  categoryPercentage: 0.8
+  barPercentage: 0.9,
+  categoryPercentage: 0.9
 }));
 
 chD = new Chart(document.getElementById('deptChart').getContext('2d'), {
