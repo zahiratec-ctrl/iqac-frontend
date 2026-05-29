@@ -960,12 +960,12 @@ const EVENT_COLORS = {
 const deptCategoryDatasets = TYPES.map(t=>({
   label: t,
   data: vd.map(d=>data.evByDeptType?.[d]?.[t]||0),
- backgroundColor: EVENT_COLORS[t],
+  backgroundColor: EVENT_COLORS[t] + '55',
   borderColor: EVENT_COLORS[t],
   borderWidth: 1,
   borderRadius: 4,
-  barPercentage: 0.9,
-  categoryPercentage: 0.9
+  barPercentage: 0.7,
+  categoryPercentage: 0.8
 }));
 
 chD = new Chart(document.getElementById('deptChart').getContext('2d'), {
@@ -1304,7 +1304,7 @@ function openDocsModal(id,name,appt,pan,aadhar,resume) {
 async function viewFacultyDoc(id, docType) {
   try {
     const res = await fetch(`${API}/faculty/${id}/docs/${docType}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('iqac_token')}` }
     });
 
     if (!res.ok) throw new Error('Unable to view document');
@@ -1321,7 +1321,7 @@ async function viewFacultyDoc(id, docType) {
 async function downloadFacultyDoc(id, docType, filename) {
   try {
     const res = await fetch(`${API}/faculty/${id}/docs/${docType}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
+     headers: { Authorization: `Bearer ${localStorage.getItem('iqac_token')}` }
     });
 
     if (!res.ok) throw new Error('Unable to download document');
