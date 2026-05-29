@@ -947,16 +947,26 @@ document.getElementById('dept-tbody').innerHTML =
 
   if(chD)chD.destroy();
 
-const deptCategoryDatasets = TYPES.map((t,i)=>({
+const EVENT_COLORS = {
+  'VAC': '#3b82f6',
+  'FDP': '#8b5cf6',
+  'Hackathon': '#10b981',
+  'Guest Lecture': '#f59e0b',
+  'Celebration': '#ef4444',
+  'Project Expo': '#06b6d4',
+  'Symposium': '#7c3aed'
+};
+
+const deptCategoryDatasets = TYPES.map(t=>({
   label: t,
   data: vd.map(d=>data.evByDeptType?.[d]?.[t]||0),
-  backgroundColor: DC[i % DC.length] + '55',
-  borderColor: DC[i % DC.length],
+  backgroundColor: EVENT_COLORS[t] + '55',
+  borderColor: EVENT_COLORS[t],
   borderWidth: 1,
-   borderRadius: 4,
-   barPercentage: 0.7,
-   categoryPercentage: 0.8
- }));
+  borderRadius: 4,
+  barPercentage: 0.7,
+  categoryPercentage: 0.8
+}));
 
 chD = new Chart(document.getElementById('deptChart').getContext('2d'), {
   type: 'bar',
