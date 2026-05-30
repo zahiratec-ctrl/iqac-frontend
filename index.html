@@ -554,6 +554,43 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div class="f"><label>Research Exp (Yrs)</label><input type="number" id="ef-rexp" min="0"></div>
       <div class="f"><label>Industry Exp (Yrs)</label><input type="number" id="ef-iexp" min="0"></div>
     </div>
+<div class="fsec" style="margin-bottom:16px">
+  <h3>🔄 Re-upload Documents</h3>
+
+  <div class="fr c2">
+    <div class="f">
+      <label>Appointment Order</label>
+      <div class="uz">
+        <input type="file" id="ef-doc-appt" name="doc_appt" accept=".pdf,.jpg,.jpeg,.png" onchange="setFL('ef-appt-l',this)">
+        <p id="ef-appt-l">Re-upload Appointment Order</p>
+      </div>
+    </div>
+
+    <div class="f">
+      <label>PAN Card</label>
+      <div class="uz">
+        <input type="file" id="ef-doc-pan" name="doc_pan" accept=".pdf,.jpg,.jpeg,.png" onchange="setFL('ef-pan-l',this)">
+        <p id="ef-pan-l">Re-upload PAN Card</p>
+      </div>
+    </div>
+
+    <div class="f">
+      <label>Aadhar Card</label>
+      <div class="uz">
+        <input type="file" id="ef-doc-aadhar" name="doc_aadhar" accept=".pdf,.jpg,.jpeg,.png" onchange="setFL('ef-aadhar-l',this)">
+        <p id="ef-aadhar-l">Re-upload Aadhar Card</p>
+      </div>
+    </div>
+
+    <div class="f">
+      <label>Resume / CV</label>
+      <div class="uz">
+        <input type="file" id="ef-doc-resume" name="doc_resume" accept=".pdf,.doc,.docx" onchange="setFL('ef-resume-l',this)">
+        <p id="ef-resume-l">Re-upload Resume / CV</p>
+      </div>
+    </div>
+  </div>
+</div>
     <div style="display:flex;gap:9px"><button class="btn-sub" onclick="saveEditFac()">Save Changes →</button><button class="mbtn" onclick="sd('edit-fac-modal','none')">Cancel</button></div>
   </div>
 </div>
@@ -1363,19 +1400,55 @@ function openEditModal(fRaw) {
   sd('edit-fac-modal','flex');
 }
 async function saveEditFac() {
-  const id=document.getElementById('edit-fac-id').value;
-  const body={
-    name:gv('ef-name'),department:gv('ef-dept'),empid:gv('ef-empid'),phone:gv('ef-phone'),
-    designation:gv('ef-desig'),dob:gv('ef-dob'),doj:gv('ef-doj'),dor:gv('ef-dor'),
-    emp_status:gv('ef-status'),qualification:gv('ef-qual'),specialization:gv('ef-spec'),
-    aadhar_no:gv('ef-aadhar'),pan_no:gv('ef-pan'),
-    teaching_exp:gv('ef-texp'),research_exp:gv('ef-rexp'),industry_exp:gv('ef-iexp')
-  };
-  if(!body.name||!body.department||!body.empid||!body.designation){toast('Name, Dept, Emp ID and Designation are required.','error');return;}
+  const id = document.getElementById('edit-fac-id').value;
+
+  const fd = new FormData();
+
+  fd.append('name', gv('ef-name'));
+  fd.append('department', gv('ef-dept'));
+  fd.append('empid', gv('ef-empid'));
+  fd.append('phone', gv('ef-phone'));
+  fd.append('designation', gv('ef-desig'));
+  fd.append('dob', gv('ef-dob'));
+  fd.append('doj', gv('ef-doj'));
+  fd.append('dor', gv('ef-dor'));
+  fd.append('emp_status', gv('ef-status'));
+  fd.append('qualification', gv('ef-qual'));
+  fd.append('specialization', gv('ef-spec'));
+  fd.append('aadhar_no', gv('ef-aadhar'));
+  fd.append('pan_no', gv('ef-pan'));
+  fd.append('teaching_exp', gv('ef-texp'));
+  fd.append('research_exp', gv('ef-rexp'));
+  fd.append('industry_exp', gv('ef-iexp'));
+
+  const appt = document.getElementById('ef-doc-appt').files[0];
+  const pan = document.getElementById('ef-doc-pan').files[0];
+  const aadhar = document.getElementById('ef-doc-aadhar').files[0];
+  const resume = document.getElementById('ef-doc-resume').files[0];
+
+  if (appt) fd.append('doc_appt', appt);
+  if (pan) fd.append('doc_pan', pan);
+  if (aadhar) fd.append('doc_aadhar', aadhar);
+  if (resume) fd.append('doc_resume', resume);
+
+  if (!gv('ef-name') || !gv('ef-dept') || !gv('ef-empid') || !gv('ef-desig')) {
+    toast('Name, Dept, Emp ID and Designation are required.', 'error');
+    return;
+  }
+
   try {
-    await api(`/faculty/${id}`,{method:'PUT',body});
-    sd('edit-fac-modal','none'); loadFaculty(); toast('Faculty profile updated!','success');
-  } catch(err){ toast(err.message,'error'); }
+    await api(`/faculty/${id}`, {
+      method: 'PUT',
+      body: fd
+    });
+
+    sd('edit-fac-modal', 'none');
+    loadFaculty();
+    toast('Faculty profile and documents updated!', 'success');
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 function openDelModal(id,name) {
   document.getElementById('del-fac-id').value=id;
