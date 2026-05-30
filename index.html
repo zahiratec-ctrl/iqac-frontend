@@ -1240,6 +1240,7 @@ function resetFacDocs() {
     emp.style.display = 'none';
 
     const canManage = R.canManage(CU.role);
+     const canEditOwn = CU.role === 'faculty';
     const canViewDocs = R.canViewDocs(CU.role);
 
     grid.innerHTML = list.map((f, i) => {
@@ -1283,7 +1284,7 @@ function resetFacDocs() {
 
         <div class="fac-actions">
           ${canViewDocs && hasDocs ? `<button class="btn-vd" onclick="openDocsModal(${f.id},'${String(f.name || '').replace(/'/g,"\\'")}','${f.doc_appt}','${f.doc_pan}','${f.doc_aadhar}','${f.doc_resume}')">📂 View Docs</button>` : ''}
-          ${canManage ? `<button class="btn-edit" onclick="openEditModal(${JSON.stringify(f).replace(/"/g,'&quot;')})">✏️ Edit</button>` : ''}
+         ${(canManage || canEditOwn) ? `<button class="btn-edit" onclick="openEditModal(${JSON.stringify(f).replace(/"/g,'&quot;')})">✏️ Edit / Re-upload Docs</button>` : ''}
           ${canManage ? `<button class="btn-del" onclick="openDelModal(${f.id},'${String(f.name || '').replace(/'/g,"\\'")}')">🗑 Delete</button>` : ''}
         </div>
       </div>`;
