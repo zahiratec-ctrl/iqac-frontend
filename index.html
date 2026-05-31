@@ -339,6 +339,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       </div>
     </div>
   </aside>
+<div class="ni" id="ni-intel" onclick="showPage('intelligence',this)" style="display:none">
+  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path d="M12 2v20M2 12h20"/>
+  </svg>
+  IQAC Intelligence
+</div>
 
   <main class="main">
     <!-- DASHBOARD -->
@@ -506,6 +512,47 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </div>
     <div id="acc-list"></div>
   </div>
+</div>
+
+<!-- IQAC INTELLIGENCE -->
+<div id="page-intelligence" class="page">
+  <div class="ph">
+    <div>
+      <h2>IQAC Intelligence Report</h2>
+      <p>Department-wise NBA/NAAC readiness, strengths, weaknesses and improvement suggestions</p>
+    </div>
+    <div class="ph-act">
+      <button class="btn-sub" onclick="loadIntelligenceReport()">Generate Report</button>
+    </div>
+  </div>
+
+  <div class="sgrid">
+    <div class="scard sc-b">
+      <div class="slbl">Departments Reviewed</div>
+      <div class="sval" id="ir-depts">0</div>
+      <div class="ssub">Based on available data</div>
+    </div>
+
+    <div class="scard sc-g">
+      <div class="slbl">Average Score</div>
+      <div class="sval" id="ir-score">0</div>
+      <div class="ssub">Quality readiness</div>
+    </div>
+
+    <div class="scard sc-p">
+      <div class="slbl">Strong Departments</div>
+      <div class="sval" id="ir-strong">0</div>
+      <div class="ssub">Score above 70</div>
+    </div>
+
+    <div class="scard sc-w">
+      <div class="slbl">Needs Attention</div>
+      <div class="sval" id="ir-weak">0</div>
+      <div class="ssub">Score below 50</div>
+    </div>
+  </div>
+
+  <div id="intel-report"></div>
 </div>
 
     <!-- USER MANAGEMENT -->
@@ -882,6 +929,114 @@ async function deleteAccFile(id) {
     toast(err.message, 'error');
   }
 }
+let INTEL_DATA = [];
+
+async function loadIntelligenceReport() {
+  try {
+    const data = await api('/intelligence/department-report');
+    INTEL_DATA = data;
+
+    renderIntelligenceReport(data);
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function renderIntelligenceReport(data) {
+  const box = document.getElementById('intel-report');
+
+  if (!data || !data.length) {
+    box.innerHTML = `
+      <div class="card">
+        <div class="empty">
+          <p>No intelligence data available.</p>
+          <span>Add faculty profiles, events organised and events attended records first.</span>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const avg = Math.round(data.reduce((s,d)=>s + (d.quality_score || 0),0) / data.length);
+  const strong = data.filter(d => d.quality_score >= 70).length;
+  const weak = data.filter(d => d.quality_score < 50).length;
+
+  document.getElementById('ir-depts').textContent = data.length;
+  document.getElementById('ir-score').textContent = avg;
+  document.getElementById('ir-strong').textContent = strong;
+  document.getElementById('ir-weak').textContent = weak;
+
+  box.innerHTML = data.map(d => `
+    <div class="card" style="margin-bottom:15px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">${d.department}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">
+            NBA/NAAC readiness based on events, faculty participation and faculty profile strength
+          </div>
+        </div>
+
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:${d.quality_score >= 70 ? '#16a34a' : d.quality_score >= 50 ? '#f59e0b' : '#dc2626'}">
+            ${d.quality_score}
+          </div>
+          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase">Quality Score</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px">
+        <div class="si"><div><div class="si-name">Faculty</div><div class="si-meta">${d.total_faculty}</div></div></div>
+        <div class="si"><div><div class="si-name">Ph.D %</div><div class="si-meta">${d.phd_percent}%</div></div></div>
+        <div class="si"><div><div class="si-name">Events Organised</div><div class="si-meta">${d.total_events}</div></div></div>
+        <div class="si"><div><div class="si-name">Events Attended</div><div class="si-meta">${d.attended_count}</div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:14px">
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#15803d">Strengths</div>
+          ${d.strengths.length ? d.strengths.map(x=>`<div class="si">✅ ${x}</div>`).join('') : '<div class="si">No major strength detected from current data.</div>'}
+        </div>
+
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#dc2626">Weaknesses / Gaps</div>
+          ${d.weaknesses.length ? d.weaknesses.map(x=>`<div class="si">⚠️ ${x}</div>`).join('') : '<div class="si">No major weakness detected from current data.</div>'}
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent)">Recommendations for Maximum NBA/NAAC Score</div>
+        ${d.recommendations.map(x=>`<div class="si">🎯 ${x}</div>`).join('')}
+      </div>
+
+      <div style="margin-top:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">Faculty Cadre Review</div>
+        <table class="dtbl">
+          <thead>
+            <tr>
+              <th>Professor</th>
+              <th>Associate Professor</th>
+              <th>Assistant Professor</th>
+              <th>Ph.D Faculty</th>
+              <th>Avg Exp</th>
+              <th>Missing Docs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${d.prof_count}</td>
+              <td>${d.assoc_count}</td>
+              <td>${d.asst_count}</td>
+              <td>${d.phd_count}</td>
+              <td>${d.avg_teaching_exp} yrs</td>
+              <td>${d.missing_docs}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
 function doLogout() {
   TOKEN=''; CU=null;
   localStorage.removeItem('iqac_token'); localStorage.removeItem('iqac_user');
@@ -921,6 +1076,7 @@ function launch() {
   sd('att-dl',     dl?'flex':'none');
   sd('fac-dl',     dl?'flex':'none');
 sd('ni-acc', ['iqac','principal'].includes(String(CU.role || '').trim().toLowerCase()) ? 'flex' : 'none');
+sd('ni-intel', ['iqac','principal'].includes(String(CU.role || '').trim().toLowerCase()) ? 'flex' : 'none');
   prefill();
   showPage('dashboard', document.getElementById('ni-dash'));
 }
@@ -944,6 +1100,7 @@ function showPage(id,el) {
   if(id==='faculty')loadFaculty();
   if(id==='attended')loadAttended();
   if(id === 'accreditations') loadAccFiles();
+  if(id==='intelligence') loadIntelligenceReport();
 }
 
 // ══ DASHBOARD ══
