@@ -1354,7 +1354,7 @@ async function loadEvents() {
     const tb=document.getElementById('ev-tbody');
     if(!rows.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:34px">No events found.</td></tr>`;return;}
     tb.innerHTML=rows.map((e,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td class="b">${e.name}</td><td><span class="pill pb">${e.department}</span></td><td>${e.type}</td><td>${fmtD(e.event_date)}</td><td>${e.coordinator}</td><td style="text-align:center">${e.participants}</td><td><span class="sbadge ${scls(e.status)}">${e.status}</span></td>
-<td>${eventDocsBlock(e) || '—'}</td></tr>.join('');
+<td>${eventDocsBlock(e) || '—'}</td></tr>`).join('');
   } catch(err){ toast(err.message,'error'); }
 }
 
