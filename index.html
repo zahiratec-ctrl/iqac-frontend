@@ -523,7 +523,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <p>Department-wise NBA/NAAC readiness, strengths, weaknesses and improvement suggestions</p>
     </div>
     <div class="ph-act">
-      <button class="btn-sub" onclick="loadIntelligenceReport()">Generate Report</button>
+    <button class="btn-sub" onclick="downloadIntelligenceReport()">Generate Report</button>
     </div>
   </div>
 
@@ -943,7 +943,94 @@ async function loadIntelligenceReport() {
     toast(err.message, 'error');
   }
 }
+function downloadIntelligenceReport() {
+  if (!INTEL_DATA || !INTEL_DATA.length) {
+    toast('Please wait, report data is loading.', 'warn');
+    return;
+  }
 
+  let html = `
+    <html>
+    <head>
+      <title>IQAC Intelligence Report</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:30px;color:#111827}
+        h1{color:#1e3a8a}
+        h2{color:#2563eb;margin-top:28px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:13px}
+        th{background:#eef2ff}
+        .score{font-size:24px;font-weight:bold}
+        .good{color:#16a34a}
+        .avg{color:#f59e0b}
+        .bad{color:#dc2626}
+        li{margin-bottom:6px}
+      </style>
+    </head>
+    <body>
+      <h1>IQAC Intelligence Report</h1>
+      <p><b>Generated On:</b> ${new Date().toLocaleString()}</p>
+      <p>This report analyses department-wise NBA/NAAC readiness based on events organised, events attended by faculty, faculty qualification strength and cadre profile.</p>
+  `;
+
+  INTEL_DATA.forEach(d => {
+    const cls = d.quality_score >= 70 ? 'good' : d.quality_score >= 50 ? 'avg' : 'bad';
+
+    html += `
+      <h2>${d.department}</h2>
+      <p class="score ${cls}">Quality Score: ${d.quality_score}</p>
+
+      <table>
+        <tr>
+          <th>Total Faculty</th>
+          <th>Professor</th>
+          <th>Associate Professor</th>
+          <th>Assistant Professor</th>
+          <th>Ph.D Faculty</th>
+          <th>Ph.D %</th>
+          <th>Events Organised</th>
+          <th>Events Attended</th>
+          <th>Missing Docs</th>
+        </tr>
+        <tr>
+          <td>${d.total_faculty}</td>
+          <td>${d.prof_count}</td>
+          <td>${d.assoc_count}</td>
+          <td>${d.asst_count}</td>
+          <td>${d.phd_count}</td>
+          <td>${d.phd_percent}%</td>
+          <td>${d.total_events}</td>
+          <td>${d.attended_count}</td>
+          <td>${d.missing_docs}</td>
+        </tr>
+      </table>
+
+      <h3>Strengths</h3>
+      <ul>${(d.strengths || []).map(x => `<li>${x}</li>`).join('') || '<li>No major strength detected.</li>'}</ul>
+
+      <h3>Weaknesses / Gaps</h3>
+      <ul>${(d.weaknesses || []).map(x => `<li>${x}</li>`).join('') || '<li>No major weakness detected.</li>'}</ul>
+
+      <h3>Recommendations for NBA / NAAC Improvement</h3>
+      <ul>${(d.recommendations || []).map(x => `<li>${x}</li>`).join('')}</ul>
+    `;
+  });
+
+  html += `
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'IQAC_Intelligence_Report.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  toast('IQAC Intelligence Report downloaded.', 'success');
+}
 function renderIntelligenceReport(data) {
   const box = document.getElementById('intel-report');
 
