@@ -1296,14 +1296,58 @@ chD = new Chart(document.getElementById('deptChart').getContext('2d'), {
     data:{labels:STATS.map(s=>s.replace('Pending ','')),datasets:[{data:STATS.map(s=>stMap[s]||0),backgroundColor:SC.map(c=>c+'44'),borderColor:SC,borderWidth:2,borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#94a3b8',font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#94a3b8',font:{size:10},stepSize:1}}}}});
 }
+function facultyRemarksView(e) {
+  const rows = [];
 
+  if (e.hod_remarks) {
+    rows.push(`<div style="font-size:11px;color:#92400e;margin-top:4px"><b>HOD:</b> ${e.hod_remarks}</div>`);
+  }
+
+  if (e.iqac_remarks) {
+    rows.push(`<div style="font-size:11px;color:#1d4ed8;margin-top:4px"><b>IQAC:</b> ${e.iqac_remarks}</div>`);
+  }
+
+  if (e.principal_remarks) {
+    rows.push(`<div style="font-size:11px;color:#166534;margin-top:4px"><b>Principal:</b> ${e.principal_remarks}</div>`);
+  }
+
+  if (e.final_remarks) {
+    rows.push(`<div style="font-size:11px;color:#dc2626;margin-top:4px"><b>Final Remark:</b> ${e.final_remarks}</div>`);
+  }
+
+  if (!rows.length) return '';
+
+  return `
+    <div style="margin-top:8px;padding:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px">
+      <div style="font-size:11px;font-weight:700;color:#9a3412;margin-bottom:3px">Approval Remarks</div>
+      ${rows.join('')}
+    </div>
+  `;
+}
 function renderFacDash(data) {
   const s=data.stats||{};
   st('fds-ev',s.events||0); st('fds-att',s.attended||0); st('fds-appr',s.approved||0);
   const evDiv=document.getElementById('fac-ev-status');
   const evs = data.myEvents||[];
-  evDiv.innerHTML = evs.length ? evs.map(e=>`<div class="si"><div><div class="si-name">${e.name}</div><div class="si-meta">${e.department} · ${e.type} · ${fmtD(e.event_date)}</div></div><span class="sbadge ${scls(e.status)}">${e.status}</span></div>`).join('') :
-    '<div class="empty"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>No events submitted yet</p><span>Use Event Requisition to apply.</span></div>';
+ evDiv.innerHTML = evs.length ?
+  evs.map(e => `
+    <div class="si" style="display:block">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div>
+          <div class="si-name">${e.name}</div>
+          <div class="si-meta">${e.department} · ${e.type} · ${fmtD(e.event_date)}</div>
+        </div>
+        <span class="sbadge ${scls(e.status)}">${e.status}</span>
+      </div>
+
+      ${facultyRemarksView(e)}
+    </div>
+  `).join('')
+  :
+  `<div class="empty">
+    <p>No event applications yet.</p>
+    <span>Submit an event requisition to see status here.</span>
+  </div>`;
   const atDiv=document.getElementById('fac-att-list');
   const atts = data.myAttended||[];
   atDiv.innerHTML = atts.length ? atts.map(a=>`<div class="si"><div><div class="si-name">${a.event_name}</div><div class="si-meta">${a.event_type} · ${fmtD(a.event_date)} · ${a.academic_year}</div></div><span class="pill pt">${a.academic_year}</span></div>`).join('') :
