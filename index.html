@@ -1352,14 +1352,34 @@ async function loadEvents() {
   try {
     const rows = await api('/events?'+params);
     const tb=document.getElementById('ev-tbody');
-    if(!rows.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:34px">No events found.</td></tr>`;return;}
-    tb.innerHTML=rows.map((e,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td class="b">${e.name}</td><td><span class="pill pb">${e.department}</span></td><td>${e.type}</td><td>${fmtD(e.event_date)}</td><td>${e.coordinator}</td><td style="text-align:center">${e.participants}</td><td><span class="sbadge ${scls(e.status)}">${e.status}</span></td></tr>`).join('');
+    if(!rows.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:34px">No events found.</td></tr>`;return;}
+    tb.innerHTML=rows.map((e,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td class="b">${e.name}</td><td><span class="pill pb">${e.department}</span></td><td>${e.type}</td><td>${fmtD(e.event_date)}</td><td>${e.coordinator}</td><td style="text-align:center">${e.participants}</td><td><span class="sbadge ${scls(e.status)}">${e.status}</span></td>
+<td>${eventDocsBlock(e) || '—'}</td></tr>.join('');
   } catch(err){ toast(err.message,'error'); }
 }
 
 // ══ APPROVALS ══
 function updDot(n) { const d=document.getElementById('ndot'); if(d)d.style.display=n>0?'inline-block':'none'; }
+function eventDocsBlock(e) {
+  const base = API.replace('/api','');
+  const docs = [];
 
+  if (e.brochure_file && e.brochure_file !== '—') {
+    docs.push(`<a class="btn-vd" target="_blank" href="${base}/uploads/${e.brochure_file}">📄 View Brochure</a>`);
+  }
+
+  if (e.budget_file && e.budget_file !== '—') {
+    docs.push(`<a class="btn-vd" target="_blank" href="${base}/uploads/${e.budget_file}">📊 View Budget</a>`);
+  }
+
+  if (!docs.length) return '';
+
+  return `
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${docs.join('')}
+    </div>
+  `;
+}
 function approvalRemarksBlock(e) {
   const rows = [];
 
@@ -1406,6 +1426,7 @@ async function loadApprovals() {
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><span class="pill pb">${e.department}</span><span class="pill pw">${e.type}</span><span style="font-size:11px;color:var(--text3)">${fmtD(e.event_date)}</span></div>
         <div style="font-size:11.5px;color:var(--text2)">Coordinator: <strong style="color:var(--text)">${e.coordinator}</strong> · Participants: <strong style="color:var(--text)">${e.participants}</strong></div>
         ${e.remarks?`<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">"${e.remarks}"</div>`:''}
+        ${eventDocsBlock(e)}
       </div>
       <div style="margin-top:12px">
   ${approvalRemarksBlock(e)}
@@ -1420,7 +1441,7 @@ async function loadApprovals() {
     <button class="btn-app" onclick="approveEv(${e.id})">✓ Approve</button>
     <button class="btn-rej" onclick="rejectEv(${e.id})">✕ Reject</button>
   </div>
-</div> onclick="rejectEv(${e.id})">✕ Reject</button></div>
+</div>
     </div>
     <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--border)"><span class="sbadge ${scls(e.status)}">${e.status}</span></div></div>`).join('');
   } catch(err){ toast(err.message,'error'); }
@@ -1831,7 +1852,7 @@ function toWD(title,body){const html=`<html xmlns:o='urn:schemas-microsoft-com:o
 async function dlDashXL(){if(_dashData){const vd=_dashData.depts||DEPTS;toXL([{n:'Summary',d:[['Dept','Faculty','Events','Attended'],...vd.map(d=>[d,_dashData.facByDept?.[d]||0,_dashData.evByDept?.[d]||0,_dashData.attByDept?.[d]||0])]}],'IQAC_Dashboard');}}
 async function dlDashWD(){if(_dashData){const vd=_dashData.depts||DEPTS;const rows=vd.map(d=>`<tr><td>${d}</td><td>${_dashData.facByDept?.[d]||0}</td><td>${_dashData.evByDept?.[d]||0}</td><td>${_dashData.attByDept?.[d]||0}</td></tr>`).join('');toWD('Dashboard',`<h1>IQAC Dashboard Report</h1><table><tr><th>Department</th><th>Faculty</th><th>Events</th><th>Attended</th></tr>${rows}</table>`);}}
 async function dlEvsXL(){try{const evs=await api('/events');toXL([{n:'Events',d:[['#','Name','Dept','Type','Date','Coordinator','Participants','Status'],...evs.map((e,i)=>[i+1,e.name,e.department,e.type,e.event_date,e.coordinator,e.participants,e.status])]}],'IQAC_Events');}catch{}}
-async function dlEvsWD(){try{const evs=await api('/events');const rows=evs.map((e,i)=>`<tr><td>${i+1}</td><td>${e.name}</td><td>${e.department}</td><td>${e.type}</td><td>${fmtD(e.event_date)}</td><td>${e.coordinator}</td><td>${e.participants}</td><td>${e.status}</td></tr>`).join('');toWD('Events',`<h1>Events Registry</h1><table><tr><th>#</th><th>Name</th><th>Dept</th><th>Type</th><th>Date</th><th>Coordinator</th><th>Participants</th><th>Status</th></tr>${rows}</table>`);}catch{}}
+async function dlEvsWD(){try{const evs=await api('/events');const rows=evs.map((e,i)=>`<tr><td>${i+1}</td><td>${e.name}</td><td>${e.department}</td><td>${e.type}</td><td>${fmtD(e.event_date)}</td><td>${e.coordinator}</td><td>${e.participants}</td><td>${e.status}</td></tr>`).join('');toWD('Events',`<h1>Events Registry</h1><table><tr><th>#</th><th>Name</th><th>Dept</th><th>Type</th><th>Date</th><th>Coordinator</th><th>Participants</th><th>Status</th><th>Documents</th></tr>${rows}</table>`);}catch{}}
 async function dlAttXL(){try{const rows=await api('/attended');toXL([{n:'Attended',d:[['#','Faculty','Dept','Event','Type','Date','AY'],...rows.map((r,i)=>[i+1,r.faculty_name,r.department,r.event_name,r.event_type,r.event_date,r.academic_year])]}],'IQAC_EventsAttended');}catch{}}
 async function dlAttWD(){try{const rows=await api('/attended');const r2=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.faculty_name}</td><td>${r.department}</td><td>${r.event_name}</td><td>${r.event_type}</td><td>${fmtD(r.event_date)}</td></tr>`).join('');toWD('Events_Attended',`<h1>Events Attended</h1><table><tr><th>#</th><th>Faculty</th><th>Dept</th><th>Event</th><th>Type</th><th>Date</th></tr>${r2}</table>`);}catch{}}
 async function dlFacXL(){try{const list=await api('/faculty');toXL([{n:'Faculty',d:[['#','Name','Dept','EmpID','Phone','Designation','DOB','DOJ','DOR','Qualification','Specialization','Teaching','Research','Industry','Aadhar','PAN'],...list.map((f,i)=>[i+1,f.name,f.department,f.empid,f.phone,f.designation,f.dob,f.doj,f.dor||'—',f.qualification,f.specialization,f.teaching_exp,f.research_exp,f.industry_exp,f.aadhar_no,f.pan_no])]}],'IQAC_Faculty');}catch{}}
