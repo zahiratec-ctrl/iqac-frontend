@@ -1359,6 +1359,33 @@ async function loadEvents() {
 
 // ══ APPROVALS ══
 function updDot(n) { const d=document.getElementById('ndot'); if(d)d.style.display=n>0?'inline-block':'none'; }
+
+function approvalRemarksBlock(e) {
+  const rows = [];
+
+  if (e.hod_remarks) {
+    rows.push(`<div class="si">👤 <b>HOD Remarks:</b> ${e.hod_remarks}</div>`);
+  }
+
+  if (e.iqac_remarks) {
+    rows.push(`<div class="si">🏛️ <b>IQAC Remarks:</b> ${e.iqac_remarks}</div>`);
+  }
+
+  if (e.principal_remarks) {
+    rows.push(`<div class="si">🎓 <b>Principal Remarks:</b> ${e.principal_remarks}</div>`);
+  }
+
+  if (!rows.length) return '';
+
+  return `
+    <div style="margin-top:10px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">
+        Previous Approval Remarks
+      </div>
+      ${rows.join('')}
+    </div>
+  `;
+}
 async function loadApprovals() {
   showSpinner(true);
   try {
@@ -1380,17 +1407,63 @@ async function loadApprovals() {
         <div style="font-size:11.5px;color:var(--text2)">Coordinator: <strong style="color:var(--text)">${e.coordinator}</strong> · Participants: <strong style="color:var(--text)">${e.participants}</strong></div>
         ${e.remarks?`<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">"${e.remarks}"</div>`:''}
       </div>
-      <div style="display:flex;gap:7px"><button class="btn-app" onclick="approveEv(${e.id})">✓ Approve</button><button class="btn-rej" onclick="rejectEv(${e.id})">✕ Reject</button></div>
+      <div style="margin-top:12px">
+  ${approvalRemarksBlock(e)}
+
+  <textarea
+    id="appr-remarks-${e.id}"
+    placeholder="Enter approval / rejection remarks"
+    style="width:100%;min-height:60px;margin-top:8px;border:1px solid #d1d5db;border-radius:8px;padding:8px;font-family:inherit"
+  ></textarea>
+
+  <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+    <button class="btn-app" onclick="approveEv(${e.id})">✓ Approve</button>
+    <button class="btn-rej" onclick="rejectEv(${e.id})">✕ Reject</button>
+  </div>
+</div> onclick="rejectEv(${e.id})">✕ Reject</button></div>
     </div>
     <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--border)"><span class="sbadge ${scls(e.status)}">${e.status}</span></div></div>`).join('');
   } catch(err){ toast(err.message,'error'); }
   finally { showSpinner(false); }
 }
 async function approveEv(id) {
-  try { const d=await api(`/events/${id}/approve`,{method:'PATCH'}); toast(d.message,'success'); loadApprovals(); loadDashboard(); } catch(err){ toast(err.message,'error'); }
+  const remarks = document.getElementById(`appr-remarks-${id}`)?.value || '';
+
+  try {
+    await api(`/events/${id}/approve`, {
+      method: 'PATCH',
+      body: { remarks }
+    });
+
+    toast('Event approved successfully', 'success');
+    loadApprovals();
+    loadDashboard();
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 async function rejectEv(id) {
-  try { await api(`/events/${id}/reject`,{method:'PATCH'}); toast('Event rejected.','warn'); loadApprovals(); loadDashboard(); } catch(err){ toast(err.message,'error'); }
+  const remarks = document.getElementById(`appr-remarks-${id}`)?.value || '';
+
+  if (!remarks.trim()) {
+    toast('Please enter rejection remarks.', 'warn');
+    return;
+  }
+
+  try {
+    await api(`/events/${id}/reject`, {
+      method: 'PATCH',
+      body: { remarks }
+    });
+
+    toast('Event rejected successfully', 'success');
+    loadApprovals();
+    loadDashboard();
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 
 // ══ EVENTS ATTENDED ══
