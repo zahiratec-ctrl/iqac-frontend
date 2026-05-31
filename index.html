@@ -1361,15 +1361,14 @@ async function loadEvents() {
 // ══ APPROVALS ══
 function updDot(n) { const d=document.getElementById('ndot'); if(d)d.style.display=n>0?'inline-block':'none'; }
 function eventDocsBlock(e) {
-  const base = API.replace('/api','');
   const docs = [];
 
   if (e.brochure_file && e.brochure_file !== '—') {
-    docs.push(`<a class="btn-vd" target="_blank" href="${base}/uploads/${e.brochure_file}">📄 View Brochure</a>`);
+    docs.push(`<button class="btn-vd" onclick="viewEventDoc(${e.id},'brochure')">📄 View Brochure</button>`);
   }
 
   if (e.budget_file && e.budget_file !== '—') {
-    docs.push(`<a class="btn-vd" target="_blank" href="${base}/uploads/${e.budget_file}">📊 View Budget</a>`);
+    docs.push(`<button class="btn-vd" onclick="viewEventDoc(${e.id},'budget')">📊 View Budget</button>`);
   }
 
   if (!docs.length) return '';
@@ -1379,6 +1378,25 @@ function eventDocsBlock(e) {
       ${docs.join('')}
     </div>
   `;
+}
+async function viewEventDoc(id, type) {
+  try {
+    const res = await fetch(`${API}/events/${id}/docs/${type}`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Unable to view document' }));
+      throw new Error(err.error || 'Unable to view document');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 function approvalRemarksBlock(e) {
   const rows = [];
