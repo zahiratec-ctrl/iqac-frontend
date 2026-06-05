@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <!-- Replace __API_URL__ with your render backend URL when deploying to Vercel -->
-<meta name="iqac-api-url" content="https://iqac-backend-fb98.onrender.com/api">
+<meta name="iqac-api-url" content="https://iqac-backend.onrender.com/api">
 <title>IQAC Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -767,7 +767,7 @@ async function doRegister() {
   if(!ok)return;
   const btn=document.getElementById('rg-btn'); btn.disabled=true; btn.textContent='Creating…';
   try {
-    await api('/auth/register',{method:'POST',body:{empid:id,email:em,role,department:dept||'—',password:p}});
+    await api('/api/auth/register',{method:'POST',body:{empid:id,email:em,role,department:dept||'—',password:p}});
     toast('Account created! Please sign in.','success');
     ['rg-id','rg-em','rg-pw','rg-pw2'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
     document.getElementById('rg-role').value=''; document.getElementById('rg-dept').value='';
@@ -791,7 +791,7 @@ async function doLogin() {
   btn.textContent = 'Signing in…';
 
   try {
-    const data = await api('/auth/login', {
+    const data = await api('/api/auth/login', {
       method: 'POST',
       body: { empid: id, password: p }
     });
@@ -824,7 +824,7 @@ async function doForgot() {
   if(!id){fe('fp-ie','fp-id');return;} if(!em){fe('fp-ee','fp-em');return;}
   const btn=document.getElementById('fp-btn'); btn.disabled=true; btn.textContent='Verifying…';
   try {
-    const data = await api('/auth/forgot-password',{method:'POST',body:{empid:id,email:em}});
+    const data = await api('/api/auth/forgot-password',{method:'POST',body:{empid:id,email:em}});
     _resetToken = data.reset_token;
     document.getElementById('reset-sub').textContent = `Setting new password for: ${id}`;
     ge('fp-ok','Identity verified! Redirecting to reset password…','gok');
@@ -840,7 +840,7 @@ async function doResetPw() {
   if(p.length<8){fe('rp-pe','rp-pw');return;} if(p!==p2){fe('rp-p2e','rp-pw2');return;}
   const btn=document.getElementById('rp-btn'); btn.disabled=true; btn.textContent='Saving…';
   try {
-    await api('/auth/reset-password',{method:'POST',body:{token:_resetToken,password:p}});
+    await api('/api/auth/reset-password',{method:'POST',body:{token:_resetToken,password:p}});
     _resetToken='';
     ['rp-pw','rp-pw2'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
     document.getElementById('pm-bar2').style.width='0%';
