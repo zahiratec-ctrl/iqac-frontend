@@ -931,10 +931,15 @@ async function doRegister() {
 async function doLogin() {
   clrE();
   let ok = true;
+
   const id = gv('li-id');
+  const role = gv('li-role');
   const p = gp('li-pw');
+
   if (!id) { fe('li-ie','li-id'); ok = false; }
+  if (!role) { fe('li-re','li-role'); ok = false; }
   if (!p) { fe('li-pe','li-pw'); ok = false; }
+
   if (!ok) return;
 
   const btn = document.getElementById('li-btn');
@@ -942,14 +947,15 @@ async function doLogin() {
   btn.textContent = 'Signing in…';
 
   try {
-    const data = await api('/api/auth/login', {
+    const data = await api('/auth/login', {
       method: 'POST',
-      body: { empid: id, password: p }
+      body: {
+        empid: id,
+        role: role,
+        password: p
+      }
     });
 
-    console.log('Login response:', data);  // 👈 SEE WHAT BACKEND RETURNS
-
-    // Support both 'token' and 'accessToken'
     const token = data.token || data.accessToken;
     if (!token) throw new Error('Backend did not return a token');
 
@@ -960,6 +966,7 @@ async function doLogin() {
     localStorage.setItem('iqac_user', JSON.stringify(CU));
 
     launch();
+
   } catch (err) {
     console.error('Login error:', err);
     ge('li-ge', err.message);
@@ -968,7 +975,6 @@ async function doLogin() {
     btn.textContent = 'Sign In →';
   }
 }
-
 async function doForgot() {
   clrE();
   const id=gv('fp-id'),em=gv('fp-em');
