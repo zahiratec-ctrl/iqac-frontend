@@ -826,10 +826,18 @@ const DC    = ['#3b6ef5','#6c4ef5','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5
 const RLBL  = {faculty:'Faculty',hod:'HOD',iqac:'IQAC Coordinator',iqac_dept:'IQAC Dept Coord.',principal:'Principal',accounts:'Accounts'};
 
 // ══ API HELPER ══
+function apiUrl(path) {
+  const base = API.endsWith('/api') ? API.slice(0, -4) : API.replace(/\/$/, '');
+  const fixedPath = path.startsWith('/api/')
+    ? path
+    : `/api${path.startsWith('/') ? path : '/' + path}`;
+  return base + fixedPath;
+}
+
 async function api(path, opts = {}) {
   const token =
-    localStorage.getItem('token') ||
     localStorage.getItem('iqac_token') ||
+    localStorage.getItem('token') ||
     '';
 
   const headers = opts.headers ? { ...opts.headers } : {};
@@ -849,7 +857,7 @@ async function api(path, opts = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(API + path, {
+  const res = await fetch(apiUrl(path), {
     ...opts,
     headers,
     body
@@ -1073,7 +1081,7 @@ async function uploadAccFile() {
 
 async function viewAccFile(id) {
   try {
-    const res = await fetch(`${API}/accreditations/download/${id}`, {
+    const res = await fetch(apiUrl(`/accreditations/download/${id}`), {
       headers: { Authorization: `Bearer ${TOKEN}` }
     });
 
@@ -1091,7 +1099,7 @@ async function viewAccFile(id) {
 
 async function downloadAccFile(id, filename) {
   try {
-    const res = await fetch(`${API}/accreditations/download/${id}`, {
+    const res = await fetch(apiUrl(`/accreditations/download/${id}`), {
       headers: { Authorization: `Bearer ${TOKEN}` }
     });
 
@@ -1955,7 +1963,7 @@ function eventDocsBlock(e) {
 }
 async function viewEventDoc(id, type) {
   try {
-    const res = await fetch(`${API}/events/${id}/docs/${type}`, {
+    const res = await fetch(apiUrl(`/events/${id}/docs/${type}`), {
       headers: { Authorization: `Bearer ${TOKEN}` }
     });
 
@@ -2304,7 +2312,7 @@ function openDocsModal(id,name,appt,pan,aadhar,resume) {
 
 async function viewFacultyDoc(id, docType) {
   try {
-    const res = await fetch(`${API}/faculty/${id}/docs/${docType}`, {
+    const res = await fetch(apiUrl(`/faculty/${id}/docs/${docType}`), {
       headers: { Authorization: `Bearer ${localStorage.getItem('iqac_token')}` }
     });
 
@@ -2321,7 +2329,7 @@ async function viewFacultyDoc(id, docType) {
 
 async function downloadFacultyDoc(id, docType, filename) {
   try {
-    const res = await fetch(`${API}/faculty/${id}/docs/${docType}`, {
+    const res = await fetch(apiUrl(`/faculty/${id}/docs/${docType}`), {
      headers: { Authorization: `Bearer ${localStorage.getItem('iqac_token')}` }
     });
 
