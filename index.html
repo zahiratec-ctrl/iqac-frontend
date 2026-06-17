@@ -670,6 +670,27 @@ html,body{height:100%;}
 #formats-list .btn-vd,
 #formats-list .btn-del{margin-right:6px}
 
+
+/* Formats upload visibility */
+#formats-upload-card{
+  border:1px solid #bfdbfe !important;
+  background:linear-gradient(135deg,#ffffff,#f8fbff) !important;
+}
+#formats-upload-card::before{
+  content:'IQAC Coordinator Upload Area';
+  display:inline-block;
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  color:#1d4ed8;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  border-radius:999px;
+  padding:5px 10px;
+  margin-bottom:10px;
+}
+
 </style>
 </head>
 <body>
@@ -1327,6 +1348,16 @@ function fmtD(d) { if(!d)return'—'; try{return new Date(d).toLocaleDateString(
 function scls(s) { if(s==='Approved')return'sb-ok'; if(s==='Rejected')return'sb-rej'; return'sb-pend'; }
 function setFL(lblId,inp,multi=false) { const lbl=document.getElementById(lblId); if(!lbl)return; if(multi&&inp.files.length>1)lbl.textContent=`📎 ${inp.files.length} files`; else if(inp.files[0])lbl.textContent='📎 '+inp.files[0].name; }
 function toggleDept() { const r=gv('rg-role'),need=['faculty','hod','iqac_dept'].includes(r); sd('rg-dw',need?'block':'none'); }
+
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function showSpinner(v) { sd('spinner',v?'flex':'none'); }
 function toast(msg,type='success') {
   const t=document.getElementById('toast');
@@ -2181,11 +2212,15 @@ const DEFAULT_FORMAT_CATEGORIES = [
   'Satisfaction Survey - NAAC',
   'Satisfaction Survey - NBA',
   'Exit Survey',
-  'Faculty Feedback'
+  'Faculty Feedback',
+  'Student Feedback',
+  'Employer Feedback',
+  'Alumni Feedback'
 ];
 
 function isIQACRole() {
-  return String(CU?.role || '').trim().toLowerCase() === 'iqac';
+  const r = String(CU?.role || '').trim().toLowerCase();
+  return ['iqac','iqac_coordinator','iqac coordinator'].includes(r);
 }
 
 function formatCategories() {
@@ -2216,15 +2251,23 @@ function fillFormatDropdowns() {
 }
 
 async function loadFormats() {
+  // Show the upload area immediately for IQAC, even if backend is still being fixed.
+  sd('formats-upload-card', isIQACRole() ? 'block' : 'none');
+
+  // Always populate default dropdown categories first.
+  if (!Array.isArray(_formats)) _formats = [];
+  fillFormatDropdowns();
+  renderFormats();
+
   showSpinner(true);
   try {
-    _formats = await api('/formats');
-    if (!Array.isArray(_formats)) _formats = _formats.rows || _formats.formats || [];
-    sd('formats-upload-card', isIQACRole() ? 'block' : 'none');
+    const data = await api('/formats');
+    _formats = Array.isArray(data) ? data : (data.rows || data.formats || []);
     fillFormatDropdowns();
     renderFormats();
   } catch (err) {
-    toast(err.message || 'Unable to load formats', 'error');
+    console.error('Formats load error:', err);
+    toast('Formats table/backend not ready. Upload area is visible for IQAC.', 'warn');
   } finally {
     showSpinner(false);
   }
