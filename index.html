@@ -362,6 +362,18 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         <div class="ferr" id="li-ie">Required.</div>
       </div>
       <div class="fg">
+        <label>Role / Cadre *</label>
+        <select id="li-role" onkeydown="if(event.key==='Enter')doLogin()">
+          <option value="">Select Role</option>
+          <option value="faculty">Faculty</option>
+          <option value="hod">HOD</option>
+          <option value="iqac_dept">IQAC Dept Coordinator</option>
+          <option value="iqac">IQAC Coordinator</option>
+          <option value="principal">Principal</option>
+        </select>
+        <div class="ferr" id="li-re">Select role.</div>
+      </div>
+      <div class="fg">
         <label>Password</label>
         <input type="password" id="li-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
         <a onclick="goTo('scr-forgot')" style="position:absolute;right:0;top:0;font-size:11px;color:#0f6b5e;cursor:pointer;font-weight:600">Forgot password?</a>
@@ -975,13 +987,14 @@ async function doLogin() {
     btn.textContent = 'Sign In →';
   }
 }
+
 async function doForgot() {
   clrE();
   const id=gv('fp-id'),em=gv('fp-em');
   if(!id){fe('fp-ie','fp-id');return;} if(!em){fe('fp-ee','fp-em');return;}
   const btn=document.getElementById('fp-btn'); btn.disabled=true; btn.textContent='Verifying…';
   try {
-    const data = await api('/api/auth/forgot-password',{method:'POST',body:{empid:id,email:em}});
+    const data = await api('/auth/forgot-password',{method:'POST',body:{empid:id,email:em}});
     _resetToken = data.reset_token;
     document.getElementById('reset-sub').textContent = `Setting new password for: ${id}`;
     ge('fp-ok','Identity verified! Redirecting to reset password…','gok');
@@ -997,7 +1010,7 @@ async function doResetPw() {
   if(p.length<8){fe('rp-pe','rp-pw');return;} if(p!==p2){fe('rp-p2e','rp-pw2');return;}
   const btn=document.getElementById('rp-btn'); btn.disabled=true; btn.textContent='Saving…';
   try {
-    await api('/api/auth/reset-password',{method:'POST',body:{token:_resetToken,password:p}});
+    await api('/auth/reset-password',{method:'POST',body:{token:_resetToken,password:p}});
     _resetToken='';
     ['rp-pw','rp-pw2'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
     document.getElementById('pm-bar2').style.width='0%';
