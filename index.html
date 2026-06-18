@@ -691,6 +691,16 @@ html,body{height:100%;}
   margin-bottom:10px;
 }
 
+
+/* Quantitative Intelligence */
+.intel-risk-high{background:#fee2e2;color:#991b1b}
+.intel-risk-med{background:#fef9c3;color:#92400e}
+.intel-risk-low{background:#dcfce7;color:#166534}
+.intel-table-wrap{overflow-x:auto}
+.intel-compact td,.intel-compact th{font-size:11.5px!important;padding:7px 8px!important}
+.intel-section-title{font-size:15px;font-weight:800;margin:0 0 10px;color:var(--text)}
+.intel-muted{font-size:11.5px;color:var(--text3)}
+
 </style>
 </head>
 <body>
@@ -1065,114 +1075,59 @@ Intelligence
 </div>
 
 <!-- IQAC INTELLIGENCE -->
+
+<!-- IQAC INTELLIGENCE -->
 <div id="page-intelligence" class="page">
   <div class="ph">
     <div>
-     <h2 id="intel-title">Accreditation Intelligence</h2>
-      <p id="intel-subtitle">
-Department-wise NBA/NAAC readiness, strengths, weaknesses and improvement suggestions
-</p>
+      <h2 id="intel-title">Accreditation Intelligence</h2>
+      <p id="intel-subtitle">Quantitative NBA/NAAC readiness dashboard with remarks workflow</p>
     </div>
     <div class="ph-act">
-    <button class="btn-sub" onclick="downloadIntelligenceReport()">Generate Report</button>
+      <button class="btn-sub" id="intel-save-btn" onclick="saveIntelligenceRemarks()">Save Remarks Report</button>
+      <button class="btn-wd" onclick="downloadIntelligenceReport()">Download Report</button>
     </div>
   </div>
 
-  <div class="sgrid">
+  <div class="sgrid" id="intel-topcards">
     <div class="scard sc-b">
-      <div class="slbl">Departments Reviewed</div>
+      <div class="slbl" id="ir-card1-lbl">Departments</div>
       <div class="sval" id="ir-depts">0</div>
-      <div class="ssub">Based on available data</div>
+      <div class="ssub">Reviewed</div>
     </div>
-
     <div class="scard sc-g">
       <div class="slbl">Average Score</div>
       <div class="sval" id="ir-score">0</div>
-      <div class="ssub">Quality readiness</div>
+      <div class="ssub">Evidence readiness</div>
     </div>
-
     <div class="scard sc-p">
-      <div class="slbl">Strong Departments</div>
-      <div class="sval" id="ir-strong">0</div>
-      <div class="ssub">Score above 70</div>
-    </div>
-
-    <div class="scard sc-w">
-      <div class="slbl">Needs Attention</div>
+      <div class="slbl">Critical Gaps</div>
       <div class="sval" id="ir-weak">0</div>
-      <div class="ssub">Score below 50</div>
+      <div class="ssub">Need attention</div>
+    </div>
+    <div class="scard sc-w">
+      <div class="slbl">Reports Visible</div>
+      <div class="sval" id="ir-reports">0</div>
+      <div class="ssub">Saved remarks</div>
+    </div>
+  </div>
+
+  <div class="dg" id="intel-chart-row">
+    <div class="card">
+      <h3 style="font-size:14px;margin-bottom:12px">Comparative Shortfall Chart</h3>
+      <div class="cw"><canvas id="intel-shortfall-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:14px;margin-bottom:12px">Remarks / Action Points</h3>
+      <textarea id="intel-remarks" class="f" style="width:100%;min-height:190px;border:1px solid var(--border2);border-radius:8px;padding:10px;font-family:inherit" placeholder="Enter concise IQAC/HOD remarks and action points..."></textarea>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">
+        IQAC/Principal remarks are visible to HODs. HOD remarks are visible to faculty.
+      </div>
     </div>
   </div>
 
   <div id="intel-report"></div>
 </div>
-
-
-    <!-- FORMATS -->
-    <div id="page-formats" class="page">
-      <div class="ph">
-        <div>
-          <h2>Formats</h2>
-          <p>Standard IQAC, NAAC, NBA and academic documentation formats</p>
-        </div>
-      </div>
-
-      <div class="card" id="formats-upload-card" style="display:none;margin-bottom:16px">
-        <h3 style="font-size:14px;margin-bottom:12px">Upload / Add Format</h3>
-        <div class="fr c3">
-          <div class="f">
-            <label>Select Existing Category</label>
-            <select id="fmt-up-category"></select>
-          </div>
-          <div class="f">
-            <label>Or Add New Category</label>
-            <input id="fmt-new-category" placeholder="e.g. Faculty Feedback">
-          </div>
-          <div class="f">
-            <label>Format Title</label>
-            <input id="fmt-title" placeholder="e.g. Lesson Plan Format">
-          </div>
-        </div>
-        <div class="fr c1">
-          <div class="f">
-            <label>Upload File</label>
-            <input id="fmt-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip">
-          </div>
-        </div>
-        <button class="btn-sub" onclick="uploadFormat()">Upload Format</button>
-      </div>
-
-      
-      <div class="card" id="formats-category-card" style="display:none;margin-bottom:16px">
-        <h3 style="font-size:14px;margin-bottom:12px">Manage Format Categories</h3>
-        <div class="fr c2">
-          <div class="f">
-            <label>Select Category to Delete</label>
-            <select id="fmt-del-category"></select>
-          </div>
-          <div class="f" style="display:flex;align-items:end">
-            <button class="btn-del" onclick="deleteFormatCategory()">Delete Selected Category</button>
-          </div>
-        </div>
-        <div class="ib" style="margin-bottom:0">
-          Deleting a category will also remove all uploaded formats under that category.
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="fr c2">
-          <div class="f">
-            <label>Search by Category</label>
-            <select id="fmt-filter" onchange="renderFormats()"></select>
-          </div>
-          <div class="f">
-            <label>Search by Title</label>
-            <input id="fmt-search" placeholder="Search lesson plan, survey, feedback..." oninput="renderFormats()">
-          </div>
-        </div>
-        <div id="formats-list"></div>
-      </div>
-    </div>
 
     <!-- USER MANAGEMENT -->
     <div id="page-users" class="page">
@@ -3216,6 +3171,317 @@ async function dlFacWD(){try{const list=await api('/faculty');const rows=list.ma
     });
   } else { goTo('scr-login'); }
 })();
+
+/* ═════════ QUANTITATIVE INTELLIGENCE OVERRIDE ═════════ */
+let INTEL_REPORTS = [];
+let INTEL_MODE = '';
+let intelShortfallChart = null;
+
+function intelRole(){
+  return String(CU?.role || '').trim().toLowerCase();
+}
+function riskClass(score){
+  score = Number(score || 0);
+  if (score >= 70) return 'intel-risk-low';
+  if (score >= 50) return 'intel-risk-med';
+  return 'intel-risk-high';
+}
+function riskText(score){
+  score = Number(score || 0);
+  if (score >= 70) return 'Low';
+  if (score >= 50) return 'Moderate';
+  return 'High';
+}
+function criterionShort(d){
+  const nba = (d.criterion_coverage?.nba || []).map(x => String(x).replace(/^NBA\s*/,'')).slice(0,3).join(', ');
+  const naac = (d.criterion_coverage?.naac || []).map(x => String(x).replace(/^NAAC\s*/,'')).slice(0,3).join(', ');
+  return { nba: nba || '-', naac: naac || '-' };
+}
+function deptShortfallScore(d){
+  let gap = 0;
+  if ((d.total_faculty || 0) === 0) gap += 25;
+  if ((d.phd_percent || 0) < 30) gap += 15;
+  if ((d.prof_count || 0) < 1) gap += 10;
+  if ((d.assoc_count || 0) < 1) gap += 10;
+  if ((d.total_events || 0) < 2) gap += 10;
+  if ((d.attended_count || 0) < (d.total_faculty || 0)) gap += 10;
+  if ((d.missing_docs || 0) > 0) gap += Math.min(20, Number(d.missing_docs || 0) * 3);
+  return Math.min(100, gap);
+}
+
+async function loadIntelligenceReportsForRole(){
+  try {
+    const r = intelRole();
+    let qs = '';
+    if (['hod','iqac_dept'].includes(r)) qs = `?visible_to=hod&department=${encodeURIComponent(CU.department || '')}`;
+    else if (r === 'faculty') qs = `?visible_to=faculty&department=${encodeURIComponent(CU.department || '')}`;
+    else qs = '?visible_to=iqac';
+    const data = await api('/intelligence/reports' + qs);
+    INTEL_REPORTS = Array.isArray(data) ? data : [];
+  } catch(e) {
+    INTEL_REPORTS = [];
+  }
+}
+
+async function loadIntelligenceReport() {
+  const r = intelRole();
+  const dept = CU.department && CU.department !== '—' ? CU.department : '';
+
+  if (r === 'faculty') {
+    await loadMyContribution();
+    return;
+  }
+
+  if (document.getElementById('intel-save-btn')) sd('intel-save-btn', ['iqac','principal','hod','iqac_dept'].includes(r) ? 'inline-flex' : 'none');
+  if (document.getElementById('intel-title')) {
+    document.getElementById('intel-title').textContent =
+      ['hod','iqac_dept'].includes(r) ? `${dept} Faculty Contribution Intelligence` : 'Institutional Accreditation Intelligence';
+  }
+  if (document.getElementById('intel-subtitle')) {
+    document.getElementById('intel-subtitle').textContent =
+      ['hod','iqac_dept'].includes(r)
+      ? 'Faculty-wise NBA/NAAC contribution summary with HOD remarks workflow'
+      : 'Department-wise shortfall comparison mapped to NBA and NAAC criteria';
+  }
+
+  try {
+    showSpinner(true);
+    await loadIntelligenceReportsForRole();
+
+    if (['hod','iqac_dept'].includes(r)) {
+      INTEL_MODE = 'hod';
+      const data = await api('/intelligence/faculty-contribution');
+      INTEL_DATA = Array.isArray(data) ? data : [];
+      renderHodFacultyContribution(INTEL_DATA);
+    } else {
+      INTEL_MODE = 'institution';
+      const data = await api(`/intelligence/department-report?department=${encodeURIComponent(dept)}`);
+      INTEL_DATA = Array.isArray(data) ? data : [];
+      renderInstitutionQuantitative(INTEL_DATA);
+    }
+  } catch (err) {
+    console.error('Intelligence error:', err);
+    toast(err.message || 'Unable to load intelligence', 'error');
+  } finally {
+    showSpinner(false);
+  }
+}
+
+function renderInstitutionQuantitative(data){
+  const box = document.getElementById('intel-report');
+  if (!box) return;
+  if (!data.length) {
+    box.innerHTML = `<div class="card"><div class="empty"><p>No intelligence data available.</p><span>Add faculty, events and attended activities first.</span></div></div>`;
+    return;
+  }
+
+  const avg = Math.round(data.reduce((s,d)=>s + Number(d.quality_score || 0),0) / data.length);
+  const critical = data.filter(d => deptShortfallScore(d) >= 40).length;
+  document.getElementById('ir-card1-lbl').textContent = 'Departments';
+  document.getElementById('ir-depts').textContent = data.length;
+  document.getElementById('ir-score').textContent = avg || 0;
+  document.getElementById('ir-weak').textContent = critical;
+  document.getElementById('ir-reports').textContent = INTEL_REPORTS.length || 0;
+
+  drawIntelChart(data.map(d=>d.department), data.map(deptShortfallScore), 'Shortfall Score');
+
+  box.innerHTML = `
+    ${renderSavedReports(INTEL_REPORTS, 'IQAC / Principal Remarks visible to HODs')}
+    <div class="card">
+      <div class="intel-section-title">Department Shortfall Matrix</div>
+      <div class="intel-table-wrap">
+        <table class="tbl intel-compact">
+          <thead>
+            <tr>
+              <th>Dept</th><th>Faculty</th><th>FSR</th><th>Prof Gap</th><th>Assoc Gap</th><th>PhD %</th>
+              <th>Events Org.</th><th>Events Att.</th><th>Missing Docs</th><th>NBA Gap/Map</th><th>NAAC Gap/Map</th><th>Risk</th><th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(d=>{
+              const c = criterionShort(d);
+              const profGap = (d.prof_count||0) < 1 ? 1 : 0;
+              const assocGap = (d.assoc_count||0) < 1 ? 1 : 0;
+              const score = d.quality_score || 0;
+              return `<tr>
+                <td class="b">${esc(d.department)}</td>
+                <td>${d.total_faculty || 0}</td>
+                <td>${esc(d.fsr || 'NA')}</td>
+                <td>${profGap}</td>
+                <td>${assocGap}</td>
+                <td>${d.phd_percent || 0}%</td>
+                <td>${d.total_events || 0}</td>
+                <td>${d.attended_count || 0}</td>
+                <td>${d.missing_docs || 0}</td>
+                <td>${esc(c.nba)}</td>
+                <td>${esc(c.naac)}</td>
+                <td><span class="pill ${riskClass(score)}">${riskText(score)}</span></td>
+                <td><b>${score}</b></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="intel-section-title">Action Priority Summary</div>
+      <div class="intel-table-wrap">
+        <table class="tbl intel-compact">
+          <thead><tr><th>Dept</th><th>Top Quantitative Shortfalls</th><th>Suggested Criteria Focus</th></tr></thead>
+          <tbody>
+          ${data.map(d=>{
+            const gaps = [];
+            if ((d.total_faculty||0) === 0) gaps.push('Faculty data missing');
+            if ((d.phd_percent||0) < 30) gaps.push(`PhD below 30% (${d.phd_percent||0}%)`);
+            if ((d.prof_count||0) < 1) gaps.push('Professor cadre gap');
+            if ((d.assoc_count||0) < 1) gaps.push('Associate Professor cadre gap');
+            if ((d.total_events||0) < 2) gaps.push(`Low events (${d.total_events||0})`);
+            if ((d.attended_count||0) < (d.total_faculty||0)) gaps.push('Low faculty participation');
+            if ((d.missing_docs||0) > 0) gaps.push(`${d.missing_docs} missing documents`);
+            const c = criterionShort(d);
+            return `<tr><td class="b">${esc(d.department)}</td><td>${esc(gaps.slice(0,4).join(' | ') || 'No major quantitative shortfall')}</td><td><b>NBA:</b> ${esc(c.nba)}<br><b>NAAC:</b> ${esc(c.naac)}</td></tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderHodFacultyContribution(rows){
+  const box = document.getElementById('intel-report');
+  if (!box) return;
+  const total = rows.length;
+  const avg = total ? Math.round(rows.reduce((s,r)=>s+Number(r.contribution_score||0),0)/total) : 0;
+  const critical = rows.filter(r => Number(r.contribution_score||0) < 40).length;
+  document.getElementById('ir-card1-lbl').textContent = 'Faculty';
+  document.getElementById('ir-depts').textContent = total;
+  document.getElementById('ir-score').textContent = avg;
+  document.getElementById('ir-weak').textContent = critical;
+  document.getElementById('ir-reports').textContent = INTEL_REPORTS.length || 0;
+
+  drawIntelChart(rows.map(r=>r.name || r.empid), rows.map(r=>r.contribution_score || 0), 'Contribution Score');
+
+  box.innerHTML = `
+    ${renderSavedReports(INTEL_REPORTS, 'IQAC / Principal reports visible to this department')}
+    <div class="card">
+      <div class="intel-section-title">${esc(CU.department || '')} Faculty NBA/NAAC Contribution Matrix</div>
+      <div class="intel-table-wrap">
+        <table class="tbl intel-compact">
+          <thead>
+            <tr>
+              <th>Faculty</th><th>Designation</th><th>Qualification</th><th>Organised</th><th>Attended</th>
+              <th>Docs Missing</th><th>NBA Mapping</th><th>NAAC Mapping</th><th>Contribution Score</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>{
+              return `<tr>
+                <td class="b">${esc(r.name || r.empid || '-')}</td>
+                <td>${esc(r.designation || '-')}</td>
+                <td>${esc(r.qualification || '-')}</td>
+                <td>${r.organized_count || 0}</td>
+                <td>${r.attended_count || 0}</td>
+                <td>${r.missing_docs || 0}</td>
+                <td>${esc((r.nba || []).slice(0,3).join(', ') || '-')}</td>
+                <td>${esc((r.naac || []).slice(0,3).join(', ') || '-')}</td>
+                <td><b>${r.contribution_score || 0}</b></td>
+                <td><span class="pill ${riskClass(r.contribution_score || 0)}">${riskText(r.contribution_score || 0)}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderSavedReports(reports, title){
+  if (!reports || !reports.length) return '';
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">${esc(title)}</div>
+    ${reports.map(r=>`<div class="si" style="align-items:flex-start">
+      <div>
+        <div class="si-name">${esc(r.report_type || 'Report')} ${r.department ? '· '+esc(r.department) : ''}</div>
+        <div class="si-meta">${r.created_at ? new Date(r.created_at).toLocaleString() : ''} · By ${esc(r.generated_by || '-')}</div>
+        <div style="font-size:12.5px;color:var(--text2);margin-top:6px;white-space:pre-wrap">${esc(r.remarks || '')}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function drawIntelChart(labels, values, label){
+  const c = document.getElementById('intel-shortfall-chart');
+  if (!c || typeof Chart === 'undefined') return;
+  if (intelShortfallChart) intelShortfallChart.destroy();
+  intelShortfallChart = new Chart(c, {
+    type:'bar',
+    data:{ labels, datasets:[{ label, data:values }] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, max:100 } }
+    }
+  });
+}
+
+async function saveIntelligenceRemarks(){
+  const r = intelRole();
+  if (!['iqac','principal','hod','iqac_dept'].includes(r)) return toast('You do not have permission to save remarks.', 'error');
+  const remarks = (document.getElementById('intel-remarks')?.value || '').trim();
+  if (!remarks) return toast('Please enter remarks before saving.', 'warn');
+
+  const department = ['hod','iqac_dept'].includes(r) ? (CU.department || '') : '';
+  const payload = {
+    report_type: ['hod','iqac_dept'].includes(r) ? 'HOD Faculty Contribution Report' : 'Institution Department Shortfall Report',
+    scope: ['hod','iqac_dept'].includes(r) ? 'department' : 'institution',
+    department,
+    remarks,
+    visible_to: ['hod','iqac_dept'].includes(r) ? 'faculty' : 'hod',
+    summary_json: { mode: INTEL_MODE, data: INTEL_DATA, generated_at: new Date().toISOString() }
+  };
+
+  try{
+    showSpinner(true);
+    await api('/intelligence/reports', { method:'POST', body:payload });
+    document.getElementById('intel-remarks').value = '';
+    toast('Remarks report saved successfully.', 'success');
+    await loadIntelligenceReport();
+  } catch(e){
+    toast(e.message || 'Unable to save report', 'error');
+  } finally {
+    showSpinner(false);
+  }
+}
+
+function downloadIntelligenceReport() {
+  if (!INTEL_DATA || !INTEL_DATA.length) return toast('No report data available yet.', 'warn');
+  const r = intelRole();
+  let rows = '';
+  if (INTEL_MODE === 'hod') {
+    rows = INTEL_DATA.map(x=>`<tr><td>${esc(x.name||x.empid)}</td><td>${esc(x.designation||'')}</td><td>${x.organized_count||0}</td><td>${x.attended_count||0}</td><td>${x.missing_docs||0}</td><td>${x.contribution_score||0}</td></tr>`).join('');
+  } else {
+    rows = INTEL_DATA.map(d=>`<tr><td>${esc(d.department)}</td><td>${d.total_faculty||0}</td><td>${d.prof_count||0}</td><td>${d.assoc_count||0}</td><td>${d.phd_percent||0}%</td><td>${d.total_events||0}</td><td>${d.attended_count||0}</td><td>${d.missing_docs||0}</td><td>${d.quality_score||0}</td></tr>`).join('');
+  }
+  const title = INTEL_MODE === 'hod' ? 'HOD Faculty Contribution Report' : 'Institution Department Shortfall Report';
+  const tableHead = INTEL_MODE === 'hod'
+    ? '<tr><th>Faculty</th><th>Designation</th><th>Organised</th><th>Attended</th><th>Missing Docs</th><th>Score</th></tr>'
+    : '<tr><th>Dept</th><th>Faculty</th><th>Prof</th><th>Assoc</th><th>PhD %</th><th>Events</th><th>Attended</th><th>Missing Docs</th><th>Score</th></tr>';
+
+  const content = `<html><head><title>${title}</title><style>body{font-family:Arial;padding:28px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:7px;font-size:12px}th{background:#eef2ff}.remarks{white-space:pre-wrap;margin-top:18px;padding:12px;background:#f8fafc;border:1px solid #ddd}</style></head><body><h1>${title}</h1><p>Generated: ${new Date().toLocaleString()}</p><table>${tableHead}${rows}</table><div class="remarks"><b>Remarks:</b><br>${esc(document.getElementById('intel-remarks')?.value || '')}</div></body></html>`;
+  const blob = new Blob([content], { type:'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = title.replaceAll(' ','_') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast('Report downloaded.', 'success');
+}
+/* ═════════ END QUANTITATIVE INTELLIGENCE OVERRIDE ═════════ */
+
 </script>
 </body>
 </html>
