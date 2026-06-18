@@ -1142,6 +1142,23 @@ Department-wise NBA/NAAC readiness, strengths, weaknesses and improvement sugges
         <button class="btn-sub" onclick="uploadFormat()">Upload Format</button>
       </div>
 
+      
+      <div class="card" id="formats-category-card" style="display:none;margin-bottom:16px">
+        <h3 style="font-size:14px;margin-bottom:12px">Manage Format Categories</h3>
+        <div class="fr c2">
+          <div class="f">
+            <label>Select Category to Delete</label>
+            <select id="fmt-del-category"></select>
+          </div>
+          <div class="f" style="display:flex;align-items:end">
+            <button class="btn-del" onclick="deleteFormatCategory()">Delete Selected Category</button>
+          </div>
+        </div>
+        <div class="ib" style="margin-bottom:0">
+          Deleting a category will also remove all uploaded formats under that category.
+        </div>
+      </div>
+
       <div class="card">
         <div class="fr c2">
           <div class="f">
@@ -2206,6 +2223,7 @@ function showPage(id, el) {
 
 // ══ FORMATS ══
 let _formats = [];
+let _formatCategories = [];
 const DEFAULT_FORMAT_CATEGORIES = [
   'Lesson Plan',
   'Course File Index',
@@ -2224,10 +2242,8 @@ function isIQACRole() {
 }
 
 function formatCategories() {
-  const cats = new Set(DEFAULT_FORMAT_CATEGORIES);
-  (_formats || []).forEach(f => {
-    if (f.category) cats.add(f.category);
-  });
+  const cats = new Set(_formatCategories.length ? _formatCategories : DEFAULT_FORMAT_CATEGORIES);
+  (_formats || []).forEach(f => { if (f.category) cats.add(f.category); });
   return Array.from(cats).sort((a,b)=>a.localeCompare(b));
 }
 
@@ -2248,26 +2264,39 @@ function fillFormatDropdowns() {
     up.innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if (cats.includes(current)) up.value = current;
   }
+
+  const del = document.getElementById('fmt-del-category');
+  if (del) {
+    const current = del.value || cats[0] || '';
+    del.innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if (cats.includes(current)) del.value = current;
+  }
 }
 
 async function loadFormats() {
-  // Show the upload area immediately for IQAC, even if backend is still being fixed.
   sd('formats-upload-card', isIQACRole() ? 'block' : 'none');
+  sd('formats-category-card', isIQACRole() ? 'block' : 'none');
 
-  // Always populate default dropdown categories first.
   if (!Array.isArray(_formats)) _formats = [];
   fillFormatDropdowns();
   renderFormats();
 
   showSpinner(true);
   try {
+    try {
+      const catsData = await api('/formats/categories');
+      _formatCategories = Array.isArray(catsData) ? catsData.map(x => x.category || x).filter(Boolean) : [];
+    } catch(e) {
+      _formatCategories = [];
+    }
+
     const data = await api('/formats');
     _formats = Array.isArray(data) ? data : (data.rows || data.formats || []);
     fillFormatDropdowns();
     renderFormats();
   } catch (err) {
     console.error('Formats load error:', err);
-    toast('Formats table/backend not ready. Upload area is visible for IQAC.', 'warn');
+    toast('Formats backend/table not ready. Upload area is visible for IQAC.', 'warn');
   } finally {
     showSpinner(false);
   }
@@ -2351,6 +2380,27 @@ async function uploadFormat() {
     await loadFormats();
   } catch (err) {
     toast(err.message || 'Upload failed', 'error');
+  } finally {
+    showSpinner(false);
+  }
+}
+
+
+async function deleteFormatCategory() {
+  if (!isIQACRole()) return toast('Only IQAC Coordinator can delete categories', 'error');
+
+  const category = document.getElementById('fmt-del-category')?.value || '';
+  if (!category) return toast('Select a category', 'error');
+
+  if (!confirm(`Delete category "${category}" and all formats under it?`)) return;
+
+  showSpinner(true);
+  try {
+    await api(`/formats/categories/${encodeURIComponent(category)}`, { method:'DELETE' });
+    toast('Category deleted');
+    await loadFormats();
+  } catch (err) {
+    toast(err.message || 'Unable to delete category', 'error');
   } finally {
     showSpinner(false);
   }
