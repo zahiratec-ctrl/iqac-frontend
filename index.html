@@ -701,6 +701,10 @@ html,body{height:100%;}
 .intel-section-title{font-size:15px;font-weight:800;margin:0 0 10px;color:var(--text)}
 .intel-muted{font-size:11.5px;color:var(--text3)}
 
+
+/* Emergency fix: formats page container restored */
+#page-formats .card{max-width:100%}
+
 </style>
 </head>
 <body>
@@ -1073,6 +1077,72 @@ Intelligence
     <div id="acc-list"></div>
   </div>
 </div>
+
+
+    <!-- FORMATS -->
+    <div id="page-formats" class="page">
+      <div class="ph">
+        <div>
+          <h2>Formats</h2>
+          <p>Standard IQAC, NAAC, NBA and academic documentation formats</p>
+        </div>
+      </div>
+
+      <div class="card" id="formats-upload-card" style="display:none;margin-bottom:16px">
+        <h3 style="font-size:14px;margin-bottom:12px">Upload / Add Format</h3>
+        <div class="fr c3">
+          <div class="f">
+            <label>Select Existing Category</label>
+            <select id="fmt-up-category"></select>
+          </div>
+          <div class="f">
+            <label>Or Add New Category</label>
+            <input id="fmt-new-category" placeholder="e.g. Faculty Feedback">
+          </div>
+          <div class="f">
+            <label>Format Title</label>
+            <input id="fmt-title" placeholder="e.g. Lesson Plan Format">
+          </div>
+        </div>
+        <div class="fr c1">
+          <div class="f">
+            <label>Upload File</label>
+            <input id="fmt-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip">
+          </div>
+        </div>
+        <button class="btn-sub" onclick="uploadFormat()">Upload Format</button>
+      </div>
+
+      <div class="card" id="formats-category-card" style="display:none;margin-bottom:16px">
+        <h3 style="font-size:14px;margin-bottom:12px">Manage Format Categories</h3>
+        <div class="fr c2">
+          <div class="f">
+            <label>Select Category to Delete</label>
+            <select id="fmt-del-category"></select>
+          </div>
+          <div class="f" style="display:flex;align-items:end">
+            <button class="btn-del" onclick="deleteFormatCategory()">Delete Selected Category</button>
+          </div>
+        </div>
+        <div class="ib" style="margin-bottom:0">
+          Deleting a category will also remove all uploaded formats under that category.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="fr c2">
+          <div class="f">
+            <label>Search by Category</label>
+            <select id="fmt-filter" onchange="renderFormats()"></select>
+          </div>
+          <div class="f">
+            <label>Search by Title</label>
+            <input id="fmt-search" placeholder="Search lesson plan, survey, feedback..." oninput="renderFormats()">
+          </div>
+        </div>
+        <div id="formats-list"></div>
+      </div>
+    </div>
 
 <!-- IQAC INTELLIGENCE -->
 
