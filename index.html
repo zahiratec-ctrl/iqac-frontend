@@ -3553,6 +3553,390 @@ function downloadIntelligenceReport() {
 }
 /* ═════════ END QUANTITATIVE INTELLIGENCE OVERRIDE ═════════ */
 
+
+
+/* ═════════ FINAL ROLE-SPECIFIC INTELLIGENCE OVERRIDE ═════════ */
+function intRoleFinal(){
+  return String(CU?.role || '').trim().toLowerCase();
+}
+function intDeptFinal(){
+  const d = String(CU?.department || '').trim();
+  return (!d || d === '—' || d === '-') ? '' : d;
+}
+function arrTextFinal(a){
+  return Array.isArray(a) && a.length ? a.join(' | ') : '-';
+}
+function intGapClass(v){
+  return Number(v || 0) > 0 ? 'pr' : 'pg';
+}
+function intRiskLabel(score){
+  score = Number(score || 0);
+  if (score >= 75) return 'Good';
+  if (score >= 50) return 'Moderate';
+  return 'Needs Attention';
+}
+function intSetHeader(title, sub){
+  const t = document.getElementById('intel-title');
+  const s = document.getElementById('intel-subtitle');
+  if (t) t.textContent = title;
+  if (s) s.textContent = sub;
+}
+function intShowCommon(showCards=true, showChart=false, showSave=false){
+  const cards = document.getElementById('intel-topcards');
+  const chart = document.getElementById('intel-chart-row');
+  const save = document.getElementById('intel-save-btn');
+  if (cards) cards.style.display = showCards ? 'grid' : 'none';
+  if (chart) chart.style.display = showChart ? 'grid' : 'none';
+  if (save) save.style.display = showSave ? 'inline-flex' : 'none';
+}
+function intCardVals(a,b,c,d){
+  const ids = ['ir-depts','ir-score','ir-weak','ir-reports'];
+  [a,b,c,d].forEach((v,i)=>{ const el=document.getElementById(ids[i]); if(el) el.textContent = v; });
+}
+async function loadIntelligenceReport(){
+  const r = intRoleFinal();
+  if (r === 'faculty') return loadFacultyIntelligenceFinal();
+  if (['hod','iqac_dept'].includes(r)) return loadHodIntelligenceFinal();
+  if (['iqac','principal'].includes(r)) return loadInstitutionIntelligenceFinal();
+  const box = document.getElementById('intel-report');
+  if (box) box.innerHTML = `<div class="card"><div class="empty"><p>Intelligence is not enabled for this role.</p></div></div>`;
+}
+
+async function loadFacultyIntelligenceFinal(){
+  const box = document.getElementById('intel-report');
+  if (!box) return;
+  intSetHeader('My NBA/NAAC Intelligence','Only your organized/attended activity mapping, suggestions, and HOD remarks are shown');
+  intShowCommon(false,false,false);
+  box.innerHTML = `<div class="card"><div class="si-name">Loading your contribution mapping...</div></div>`;
+  try{
+    const data = await api('/intelligence/my-contribution');
+    let remarks = [];
+    try { remarks = await api('/intelligence/my-faculty-remarks'); } catch(e) { remarks = []; }
+
+    const organized = data.organized || [];
+    const attended = data.attended || [];
+    const suggestions = data.suggestions || [];
+    const allActivities = [
+      ...organized.map(x=>({...x, source:'Organized'})),
+      ...attended.map(x=>({...x, source:'Attended'}))
+    ];
+
+    box.innerHTML = `
+      ${renderFacultyRemarkCardsFinal(remarks)}
+      <div class="card" style="margin-bottom:16px">
+        <div class="intel-section-title">My Activity Mapping to NBA / NAAC</div>
+        <div class="intel-muted" style="margin-bottom:10px">No department comparison or institutional statistics are shown in faculty login.</div>
+        <div class="intel-table-wrap">
+          <table class="tbl intel-compact">
+            <thead>
+              <tr><th>Activity</th><th>Type</th><th>Source</th><th>Date</th><th>NBA Subcriteria</th><th>NAAC Subcriteria</th></tr>
+            </thead>
+            <tbody>
+              ${allActivities.length ? allActivities.map(x=>`
+                <tr>
+                  <td class="b">${esc(x.title || '-')}</td>
+                  <td>${esc(x.type || '-')}</td>
+                  <td><span class="pill pb">${esc(x.source)}</span></td>
+                  <td>${x.date ? fmtD(x.date) : '-'}</td>
+                  <td>${esc(arrTextFinal(x.nba))}</td>
+                  <td>${esc(arrTextFinal(x.naac))}</td>
+                </tr>
+              `).join('') : `<tr><td colspan="6"><div class="empty"><p>No organized or attended activities found.</p><span>Add events or attended activities to generate NBA/NAAC mapping.</span></div></td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="intel-section-title">Suggested Next Contributions</div>
+        <div class="intel-muted" style="margin-bottom:10px">Suggestions are mapped directly to NBA / NAAC subcriteria.</div>
+        ${suggestions.length ? suggestions.map(x=>`
+          <div class="si" style="align-items:flex-start">
+            <div class="si-name" style="white-space:normal;line-height:1.5">💡 ${esc(x)}</div>
+          </div>
+        `).join('') : `<div class="empty"><p>No suggestions pending.</p><span>Your current evidence mapping looks satisfactory.</span></div>`}
+      </div>
+    `;
+  }catch(e){
+    box.innerHTML = `<div class="card"><div class="empty"><p>Unable to load faculty intelligence.</p><span>${esc(e.message || '')}</span></div></div>`;
+  }
+}
+
+function renderFacultyRemarkCardsFinal(remarks){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Remarks from HOD</div>
+    ${remarks && remarks.length ? remarks.map(r=>`
+      <div class="si" style="align-items:flex-start">
+        <div>
+          <div class="si-name">Remark by ${esc(r.remark_by || '-')}</div>
+          <div class="si-meta">${r.created_at ? new Date(r.created_at).toLocaleString() : ''}</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:6px;white-space:pre-wrap">${esc(r.remark || '')}</div>
+        </div>
+      </div>
+    `).join('') : `<div class="empty"><p>No HOD remarks yet.</p></div>`}
+  </div>`;
+}
+
+async function loadHodIntelligenceFinal(){
+  const box = document.getElementById('intel-report');
+  if (!box) return;
+  const dept = intDeptFinal();
+  intSetHeader(`${dept || 'Department'} Intelligence`,'Department compliance, faculty contributions, shortfalls, and faculty-specific remarks');
+  intShowCommon(true,false,false);
+  box.innerHTML = `<div class="card"><div class="si-name">Loading department intelligence...</div></div>`;
+
+  try{
+    const deptRows = await api(`/intelligence/department-report?department=${encodeURIComponent(dept)}`);
+    const d = Array.isArray(deptRows) ? (deptRows[0] || {}) : {};
+    const facultyRows = await api('/intelligence/faculty-contribution');
+    let deptRemarks = [];
+    let facultyRemarks = [];
+    try { deptRemarks = await api('/intelligence/department-remarks'); } catch(e) {}
+    try { facultyRemarks = await api('/intelligence/faculty-remarks'); } catch(e) {}
+
+    intCardVals(facultyRows.length || 0, d.compliance_score || d.quality_score || 0, (d.faculty_shortfall||0)+(d.prof_shortfall||0)+(d.assoc_shortfall||0)+(d.phd_gap||0), deptRemarks.length || 0);
+    const lbl = document.getElementById('ir-card1-lbl'); if(lbl) lbl.textContent = 'Faculty';
+
+    box.innerHTML = `
+      ${renderDepartmentRemarksForHodFinal(deptRemarks)}
+      ${renderDeptComplianceFinal(d, false)}
+      ${renderDepartmentEventsFinal([d], false)}
+      ${renderFacultyContributionWithRemarksFinal(facultyRows)}
+      ${renderSentFacultyRemarksFinal(facultyRemarks)}
+    `;
+  }catch(e){
+    box.innerHTML = `<div class="card"><div class="empty"><p>Unable to load HOD intelligence.</p><span>${esc(e.message || '')}</span></div></div>`;
+  }
+}
+
+function renderDeptComplianceFinal(d, multi){
+  const rows = [
+    ['Faculty Strength', d.total_faculty || 0, d.required_faculty || 0, d.faculty_shortfall || 0],
+    ['Professor Cadre', d.prof_count || 0, d.required_prof_count || 0, d.prof_shortfall || 0],
+    ['Associate Professor Cadre', d.assoc_count || 0, d.required_assoc_count || 0, d.assoc_shortfall || 0],
+    ['PhD Qualification %', `${d.phd_percent || 0}%`, `${d.required_phd_percent || 30}%`, `${d.phd_gap || 0}%`]
+  ];
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">${multi ? 'Department Compliance Against Norms' : 'Department Faculty/Cadre/Qualification Shortfall'}</div>
+    <div class="intel-table-wrap">
+      <table class="tbl intel-compact">
+        <thead><tr>${multi ? '<th>Dept</th>' : ''}<th>Parameter</th><th>Existing</th><th>Required / Target</th><th>Shortfall</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>${multi ? `<td class="b">${esc(d.department || '-')}</td>` : ''}<td class="b">${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="pill ${intGapClass(r[3])}">${r[3]}</span></td></tr>`).join('')}
+          <tr>${multi ? `<td class="b">${esc(d.department || '-')}</td>` : ''}<td class="b">NBA/NAAC Compliance Score</td><td colspan="2">${intRiskLabel(d.compliance_score || d.quality_score || 0)}</td><td><b>${d.compliance_score || d.quality_score || 0}</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderDepartmentEventsFinal(rows, multi=true){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Events Organized / Attended and NBA-NAAC Mapping</div>
+    <div class="intel-table-wrap">
+      <table class="tbl intel-compact">
+        <thead>
+          <tr>${multi ? '<th>Dept</th>' : ''}<th>Events Organized</th><th>Events Attended</th><th>NBA Subcriteria Covered</th><th>NAAC Subcriteria Covered</th></tr>
+        </thead>
+        <tbody>
+          ${rows.map(d=>{
+            const c = d.criterion_coverage || {};
+            return `<tr>
+              ${multi ? `<td class="b">${esc(d.department || '-')}</td>` : ''}
+              <td>${d.total_events || 0}</td>
+              <td>${d.attended_count || 0}</td>
+              <td>${esc(arrTextFinal(c.nba))}</td>
+              <td>${esc(arrTextFinal(c.naac))}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderDepartmentRemarksForHodFinal(remarks){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Remarks from IQAC / Principal for Department</div>
+    ${remarks && remarks.length ? remarks.map(r=>`
+      <div class="si" style="align-items:flex-start">
+        <div>
+          <div class="si-name">${esc(r.department || '-')} · By ${esc(r.remark_by || '-')}</div>
+          <div class="si-meta">${r.created_at ? new Date(r.created_at).toLocaleString() : ''}</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:6px;white-space:pre-wrap">${esc(r.remark || '')}</div>
+        </div>
+      </div>
+    `).join('') : `<div class="empty"><p>No IQAC/Principal remarks for this department.</p></div>`}
+  </div>`;
+}
+
+function renderFacultyContributionWithRemarksFinal(rows){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Faculty Contribution Table</div>
+    <div class="intel-table-wrap">
+      <table class="tbl intel-compact">
+        <thead>
+          <tr><th>Faculty</th><th>Designation</th><th>Qualification</th><th>Organised</th><th>Attended</th><th>NBA Evidence</th><th>NAAC Evidence</th><th>Score</th><th>Remark</th></tr>
+        </thead>
+        <tbody>
+          ${rows.length ? rows.map(r=>`
+            <tr>
+              <td class="b">${esc(r.name || r.empid || '-')}</td>
+              <td>${esc(r.designation || '-')}</td>
+              <td>${esc(r.qualification || '-')}</td>
+              <td>${r.organized_count || 0}</td>
+              <td>${r.attended_count || 0}</td>
+              <td>${esc(arrTextFinal((r.nba || []).slice(0,3)))}</td>
+              <td>${esc(arrTextFinal((r.naac || []).slice(0,3)))}</td>
+              <td><b>${r.contribution_score || 0}</b></td>
+              <td><button class="btn-edit" onclick="openFacultyRemarkPromptFinal('${esc(r.empid || '')}','${esc(r.name || r.empid || '')}')">Send Remark</button></td>
+            </tr>
+          `).join('') : `<tr><td colspan="9"><div class="empty"><p>No faculty found.</p></div></td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderSentFacultyRemarksFinal(remarks){
+  return `<div class="card">
+    <div class="intel-section-title">Faculty Remarks Sent</div>
+    ${remarks && remarks.length ? remarks.map(r=>`
+      <div class="si" style="align-items:flex-start">
+        <div>
+          <div class="si-name">${esc(r.faculty_name || r.empid || '-')} · ${esc(r.empid || '')}</div>
+          <div class="si-meta">${r.created_at ? new Date(r.created_at).toLocaleString() : ''}</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:6px;white-space:pre-wrap">${esc(r.remark || '')}</div>
+        </div>
+      </div>
+    `).join('') : `<div class="empty"><p>No faculty remarks sent yet.</p></div>`}
+  </div>`;
+}
+
+async function openFacultyRemarkPromptFinal(empid, name){
+  const remark = prompt(`Enter remark for ${name}:`);
+  if (!remark || !remark.trim()) return;
+  try{
+    showSpinner(true);
+    await api('/intelligence/faculty-remark', { method:'POST', body:{ empid, remark: remark.trim() } });
+    toast('Remark sent to faculty.', 'success');
+    await loadHodIntelligenceFinal();
+  }catch(e){
+    toast(e.message || 'Unable to send remark', 'error');
+  }finally{
+    showSpinner(false);
+  }
+}
+
+async function loadInstitutionIntelligenceFinal(){
+  const box = document.getElementById('intel-report');
+  if (!box) return;
+  intSetHeader('Institution Accreditation Intelligence','Department compliance, events mapping, shortfalls, and department-specific remarks');
+  intShowCommon(true,false,false);
+  box.innerHTML = `<div class="card"><div class="si-name">Loading institution intelligence...</div></div>`;
+
+  try{
+    const rows = await api('/intelligence/department-report');
+    let deptRemarks = [];
+    try { deptRemarks = await api('/intelligence/department-remarks'); } catch(e) {}
+
+    const avg = rows.length ? Math.round(rows.reduce((s,d)=>s+Number(d.compliance_score || d.quality_score || 0),0)/rows.length) : 0;
+    const totalGaps = rows.reduce((s,d)=>s+(d.faculty_shortfall||0)+(d.prof_shortfall||0)+(d.assoc_shortfall||0),0);
+    intCardVals(rows.length || 0, avg, totalGaps, deptRemarks.length || 0);
+    const lbl = document.getElementById('ir-card1-lbl'); if(lbl) lbl.textContent = 'Departments';
+
+    box.innerHTML = `
+      ${renderInstitutionComplianceFinal(rows)}
+      ${renderDepartmentEventsFinal(rows, true)}
+      ${renderDepartmentRemarkComposerFinal(rows)}
+      ${renderAllDepartmentRemarksFinal(deptRemarks)}
+    `;
+  }catch(e){
+    box.innerHTML = `<div class="card"><div class="empty"><p>Unable to load institutional intelligence.</p><span>${esc(e.message || '')}</span></div></div>`;
+  }
+}
+
+function renderInstitutionComplianceFinal(rows){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Department Shortfall Against Norms</div>
+    <div class="intel-table-wrap">
+      <table class="tbl intel-compact">
+        <thead>
+          <tr>
+            <th>Dept</th><th>Faculty Existing</th><th>Faculty Required</th><th>Faculty Gap</th>
+            <th>Prof Existing</th><th>Prof Required</th><th>Prof Gap</th>
+            <th>Assoc Existing</th><th>Assoc Required</th><th>Assoc Gap</th>
+            <th>PhD %</th><th>Target</th><th>PhD Gap</th><th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(d=>`
+            <tr>
+              <td class="b">${esc(d.department || '-')}</td>
+              <td>${d.total_faculty || 0}</td><td>${d.required_faculty || 0}</td><td><span class="pill ${intGapClass(d.faculty_shortfall)}">${d.faculty_shortfall || 0}</span></td>
+              <td>${d.prof_count || 0}</td><td>${d.required_prof_count || 0}</td><td><span class="pill ${intGapClass(d.prof_shortfall)}">${d.prof_shortfall || 0}</span></td>
+              <td>${d.assoc_count || 0}</td><td>${d.required_assoc_count || 0}</td><td><span class="pill ${intGapClass(d.assoc_shortfall)}">${d.assoc_shortfall || 0}</span></td>
+              <td>${d.phd_percent || 0}%</td><td>${d.required_phd_percent || 30}%</td><td><span class="pill ${intGapClass(d.phd_gap)}">${d.phd_gap || 0}%</span></td>
+              <td><b>${d.compliance_score || d.quality_score || 0}</b></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderDepartmentRemarkComposerFinal(rows){
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="intel-section-title">Send Remark to Specific Department</div>
+    <div class="fr c2">
+      <div class="f">
+        <label>Select Department</label>
+        <select id="dept-remark-dept">
+          ${rows.map(d=>`<option value="${esc(d.department)}">${esc(d.department)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="f">
+        <label>Remark</label>
+        <textarea id="dept-remark-text" placeholder="Enter IQAC/Principal remark for selected department"></textarea>
+      </div>
+    </div>
+    <button class="btn-sub" onclick="sendDepartmentRemarkFinal()">Send Department Remark</button>
+  </div>`;
+}
+
+async function sendDepartmentRemarkFinal(){
+  const department = document.getElementById('dept-remark-dept')?.value || '';
+  const remark = document.getElementById('dept-remark-text')?.value || '';
+  if (!department || !remark.trim()) return toast('Select department and enter remark.', 'warn');
+  try{
+    showSpinner(true);
+    await api('/intelligence/department-remark', { method:'POST', body:{ department, remark: remark.trim() } });
+    toast('Remark sent to department.', 'success');
+    await loadInstitutionIntelligenceFinal();
+  }catch(e){
+    toast(e.message || 'Unable to send department remark', 'error');
+  }finally{
+    showSpinner(false);
+  }
+}
+
+function renderAllDepartmentRemarksFinal(remarks){
+  return `<div class="card">
+    <div class="intel-section-title">Department Remarks Sent</div>
+    ${remarks && remarks.length ? remarks.map(r=>`
+      <div class="si" style="align-items:flex-start">
+        <div>
+          <div class="si-name">${esc(r.department || '-')} · By ${esc(r.remark_by || '-')}</div>
+          <div class="si-meta">${r.created_at ? new Date(r.created_at).toLocaleString() : ''}</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:6px;white-space:pre-wrap">${esc(r.remark || '')}</div>
+        </div>
+      </div>
+    `).join('') : `<div class="empty"><p>No department remarks sent yet.</p></div>`}
+  </div>`;
+}
+/* ═════════ END FINAL ROLE-SPECIFIC INTELLIGENCE OVERRIDE ═════════ */
+
 </script>
 </body>
 </html>
