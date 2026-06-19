@@ -2242,6 +2242,7 @@ async function loadFormats() {
       const catsData = await api('/formats/categories');
       _formatCategories = Array.isArray(catsData) ? catsData.map(x => x.category || x).filter(Boolean) : [];
     } catch(e) {
+      console.warn('Format categories route not ready:', e);
       _formatCategories = [];
     }
 
