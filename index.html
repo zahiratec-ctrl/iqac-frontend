@@ -2136,7 +2136,7 @@ const R = {
   facDash:  r=>r==='faculty',
   ereq:     r=>r!=='iqac_dept',
   approv:   r=>['hod','iqac','principal'].includes(r),
-  ereg:     r=>r!=='faculty',
+  ereg:     r=>['faculty','hod','iqac','iqac_dept','principal'].includes(String(r || '').trim().toLowerCase()),
   facTab:   r=>true,
  accTab: r=>['iqac','principal'].includes(String(r || '').trim().toLowerCase()),
   userMgmt: r=>['iqac','principal'].includes(r),
