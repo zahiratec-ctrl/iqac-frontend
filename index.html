@@ -3731,29 +3731,120 @@ async function saveIntelligenceRemarks(){
   }
 }
 
-function downloadIntelligenceReport() {
-  if (!INTEL_DATA || !INTEL_DATA.length) return toast('No report data available yet.', 'warn');
-  const r = intelRole();
-  let rows = '';
-  if (INTEL_MODE === 'hod') {
-    rows = INTEL_DATA.map(x=>`<tr><td>${esc(x.name||x.empid)}</td><td>${esc(x.designation||'')}</td><td>${x.organized_count||0}</td><td>${x.attended_count||0}</td><td>${x.missing_docs||0}</td><td>${x.contribution_score||0}</td></tr>`).join('');
-  } else {
-    rows = INTEL_DATA.map(d=>`<tr><td>${esc(d.department)}</td><td>${d.total_faculty||0}</td><td>${d.prof_count||0}</td><td>${d.assoc_count||0}</td><td>${d.phd_percent||0}%</td><td>${d.total_events||0}</td><td>${d.attended_count||0}</td><td>${d.missing_docs||0}</td><td>${d.quality_score||0}</td></tr>`).join('');
-  }
-  const title = INTEL_MODE === 'hod' ? 'HOD Faculty Contribution Report' : 'Institution Department Shortfall Report';
-  const tableHead = INTEL_MODE === 'hod'
-    ? '<tr><th>Faculty</th><th>Designation</th><th>Organised</th><th>Attended</th><th>Missing Docs</th><th>Score</th></tr>'
-    : '<tr><th>Dept</th><th>Faculty</th><th>Prof</th><th>Assoc</th><th>PhD %</th><th>Events</th><th>Attended</th><th>Missing Docs</th><th>Score</th></tr>';
+async function downloadIntelligenceReport() {
+  try {
+    const r = intRoleFinal ? intRoleFinal() : String(CU?.role || '').trim().toLowerCase();
+    const dept = intDeptFinal ? intDeptFinal() : (CU?.department || '');
+    const isHod = ['hod','iqac_dept'].includes(r);
 
-  const content = `<html><head><title>${title}</title><style>body{font-family:Arial;padding:28px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:7px;font-size:12px}th{background:#eef2ff}.remarks{white-space:pre-wrap;margin-top:18px;padding:12px;background:#f8fafc;border:1px solid #ddd}</style></head><body><h1>${title}</h1><p>Generated: ${new Date().toLocaleString()}</p><table>${tableHead}${rows}</table><div class="remarks"><b>Remarks:</b><br>${esc(document.getElementById('intel-remarks')?.value || '')}</div></body></html>`;
-  const blob = new Blob([content], { type:'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = title.replaceAll(' ','_') + '.html';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  toast('Report downloaded.', 'success');
+    let data = Array.isArray(INTEL_DATA) ? INTEL_DATA : [];
+
+    // The final intelligence screen renders directly but may not keep INTEL_DATA updated.
+    // Therefore fetch fresh data when Download Report is clicked.
+    if (!data.length) {
+      data = isHod
+        ? await api('/intelligence/faculty-contribution')
+        : await api('/intelligence/department-report' + (dept && !['iqac','principal'].includes(r) ? `?department=${encodeURIComponent(dept)}` : ''));
+      INTEL_DATA = Array.isArray(data) ? data : [];
+      if (!INTEL_MODE) INTEL_MODE = isHod ? 'hod' : 'institution';
+    }
+
+    if (!data || !data.length) {
+      return toast('No report data available yet.', 'warn');
+    }
+
+    const title = isHod ? 'HOD Faculty Contribution Report' : 'Institution Department Shortfall Report';
+
+    const rows = isHod
+      ? data.map(x => `
+        <tr>
+          <td>${esc(x.name || x.empid || '-')}</td>
+          <td>${esc(x.designation || '-')}</td>
+          <td>${esc(x.qualification || '-')}</td>
+          <td>${x.organized_count || 0}</td>
+          <td>${x.attended_count || 0}</td>
+          <td>${x.missing_docs || 0}</td>
+          <td>${x.contribution_score || 0}</td>
+        </tr>`).join('')
+      : data.map(d => `
+        <tr>
+          <td>${esc(d.department || '-')}</td>
+          <td>${d.year1_intake ?? d.approved_intake ?? '-'}</td>
+          <td>${d.year2_intake ?? '-'}</td>
+          <td>${d.year3_intake ?? '-'}</td>
+          <td>${d.year4_intake ?? '-'}</td>
+          <td>${d.total_student_strength ?? d.intake ?? '-'}</td>
+          <td>${d.total_faculty || 0}</td>
+          <td>${d.required_faculty || 0}</td>
+          <td>${d.faculty_shortfall || 0}</td>
+          <td>${d.prof_count || 0}</td>
+          <td>${d.required_prof_count || 0}</td>
+          <td>${d.prof_shortfall || 0}</td>
+          <td>${d.assoc_count || 0}</td>
+          <td>${d.required_assoc_count || 0}</td>
+          <td>${d.assoc_shortfall || 0}</td>
+          <td>${d.phd_percent || 0}%</td>
+          <td>${d.required_phd_percent || 30}%</td>
+          <td>${d.total_events || 0}</td>
+          <td>${d.attended_count || 0}</td>
+          <td>${d.compliance_score || d.quality_score || 0}</td>
+        </tr>`).join('');
+
+    const head = isHod
+      ? `<tr><th>Faculty</th><th>Designation</th><th>Qualification</th><th>Organised</th><th>Attended</th><th>Missing Docs</th><th>Score</th></tr>`
+      : `<tr><th>Dept</th><th>Y1 Intake</th><th>Y2</th><th>Y3</th><th>Y4</th><th>Total Strength</th><th>Faculty Existing</th><th>Faculty Required</th><th>Faculty Gap</th><th>Prof Existing</th><th>Prof Required</th><th>Prof Gap</th><th>Assoc Existing</th><th>Assoc Required</th><th>Assoc Gap</th><th>PhD %</th><th>Target</th><th>Events Organised</th><th>Events Attended</th><th>Score</th></tr>`;
+
+    const suggestions = !isHod
+      ? data.map(d => {
+          const rec = Array.isArray(d.recommendations) ? d.recommendations : [];
+          const gaps = d.event_gap_analysis?.gaps || [];
+          return `
+            <h2>${esc(d.department || '-')} — Suggestions / Gaps</h2>
+            <ul>
+              ${rec.map(x => `<li>${esc(x)}</li>`).join('') || '<li>No specific recommendation.</li>'}
+            </ul>
+            <table>
+              <tr><th>Event / Evidence Area</th><th>Existing</th><th>Required</th><th>Gap</th><th>NBA Mapping</th><th>NAAC Mapping</th></tr>
+              ${gaps.map(g => `<tr><td>${esc(g.type || g.key || '-')}</td><td>${g.existing || 0}</td><td>${g.required || 0}</td><td>${g.gap || 0}</td><td>${esc(g.nba_mapping || '-')}</td><td>${esc(g.naac_mapping || '-')}</td></tr>`).join('')}
+            </table>`;
+        }).join('')
+      : '';
+
+    const content = `
+      <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body{font-family:Arial,sans-serif;padding:28px;color:#111827}
+          h1{color:#1e3a8a}
+          h2{color:#2563eb;margin-top:24px}
+          table{border-collapse:collapse;width:100%;margin-top:14px}
+          td,th{border:1px solid #ccc;padding:7px;font-size:12px;text-align:left}
+          th{background:#eef2ff}
+          .remarks{white-space:pre-wrap;margin-top:18px;padding:12px;background:#f8fafc;border:1px solid #ddd}
+        </style>
+      </head>
+      <body>
+        <h1>${title}</h1>
+        <p><b>Generated:</b> ${new Date().toLocaleString()}</p>
+        <table>${head}${rows}</table>
+        ${suggestions}
+        <div class="remarks"><b>Remarks:</b><br>${esc(document.getElementById('intel-remarks')?.value || '')}</div>
+      </body>
+      </html>`;
+
+    const blob = new Blob([content], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title.replaceAll(' ', '_') + '.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    toast('Report downloaded.', 'success');
+  } catch (err) {
+    toast(err.message || 'Unable to download report', 'error');
+  }
 }
 /* ═════════ END QUANTITATIVE INTELLIGENCE OVERRIDE ═════════ */
 
@@ -3814,6 +3905,8 @@ async function loadFacultyIntelligenceFinal(){
   box.innerHTML = `<div class="card"><div class="si-name">Loading your contribution mapping...</div></div>`;
   try{
     const data = await api('/intelligence/my-contribution');
+    INTEL_MODE = 'faculty';
+    INTEL_DATA = [data];
     let remarks = [];
     try { remarks = await api('/intelligence/my-faculty-remarks'); } catch(e) { remarks = []; }
 
@@ -3893,6 +3986,8 @@ async function loadHodIntelligenceFinal(){
     const deptRows = await api(`/intelligence/department-report?department=${encodeURIComponent(dept)}`);
     const d = Array.isArray(deptRows) ? (deptRows[0] || {}) : {};
     const facultyRows = await api('/intelligence/faculty-contribution');
+    INTEL_MODE = 'hod';
+    INTEL_DATA = Array.isArray(facultyRows) ? facultyRows : [];
     let deptRemarks = [];
     let facultyRemarks = [];
     try { deptRemarks = await api('/intelligence/department-remarks'); } catch(e) {}
@@ -4041,6 +4136,8 @@ async function loadInstitutionIntelligenceFinal(){
 
   try{
     const rows = await api('/intelligence/department-report');
+    INTEL_MODE = 'institution';
+    INTEL_DATA = Array.isArray(rows) ? rows : [];
     let deptRemarks = [];
     try { deptRemarks = await api('/intelligence/department-remarks'); } catch(e) {}
 
