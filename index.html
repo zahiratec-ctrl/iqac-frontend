@@ -2835,7 +2835,8 @@ async function loadApprovals() {
     const r=CU.role, d=CU.department&&CU.department!=='—'?CU.department:null;
     const pend = all.filter(e=>{
       if(r==='hod')       return e.status==='Pending HOD'&&(!d||e.department===d);
-      if(r==='iqac')      return e.status==='Pending IQAC'&&(!d||e.department===d);
+      // IQAC approval is institution-level; do not restrict by IQAC user's department.
+      if(r==='iqac')      return e.status==='Pending IQAC';
       if(r==='principal') return e.status==='Pending Principal';
       return false;
     });
